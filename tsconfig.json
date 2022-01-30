@@ -3,7 +3,9 @@
     "strict": true,
     "esModuleInterop": true,
     "jsx": "preserve",
-    "noEmit": true
+    "noEmit": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node"
   },
   "exclude": [
     "./node_modules"

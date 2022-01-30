@@ -2,25 +2,34 @@ import { ObservablePromise } from 'mobx-observable-promise'
 import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
 import Canvas from './Canvas'
-import { createDetector, SupportedModels } from '@tensorflow-models/pose-detection'
-import '@tensorflow/tfjs-backend-webgl'
-import { setBackend } from '@tensorflow/tfjs-core'
+import WorkerToPage from './WorkerToPage'
 
 const Detector = observer(() => {
+  // FIXME: Cleanup worker
   const [observablePromise] = useState(() => {
     const observablePromise = new ObservablePromise(async () => {
-      await setBackend('webgl')
-      return await createDetector(SupportedModels.MoveNet)
+      const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+      await new Promise<void>((resolve, reject) => {
+        worker.onerror = reject
+        worker.onmessageerror = reject
+        worker.onmessage = ({ data }) => {
+          if (data === WorkerToPage.SUCCESS) {
+            resolve()
+          } else {
+            reject(new Error('Error setting up detector'))
+          }
+        }
+      })
+      return worker
     })
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    observablePromise.execute().catch()
+    observablePromise.execute().catch(e => console.log(e))
     return observablePromise
   })
 
   return (
     <>
       {observablePromise.wasSuccessful
-        ? <Canvas detector={observablePromise.result} />
+        ? <Canvas worker={observablePromise.result} />
         : observablePromise.isExecuting
           ? 'Setting up detector'
           : 'Error setting up detector'}

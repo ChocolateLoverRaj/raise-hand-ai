@@ -2,17 +2,17 @@ import { observer } from 'mobx-react-lite'
 import { useContext, useEffect, useRef, useState } from 'react'
 import VideoContext from './VideoContext'
 import never from 'never'
-import { PoseDetector } from '@tensorflow-models/pose-detection'
 import repeatedAnimationFrame from './repeatedAnimationFrame'
 import { ObservablePromise } from 'mobx-observable-promise'
 import handMap from './handMap'
 import isHandRaised from './isHandRaised'
+import { Pose } from '@tensorflow-models/pose-detection'
 
 export interface CanvasProps {
-  detector: PoseDetector
+  worker: Worker
 }
 
-const Canvas = observer<CanvasProps>(({ detector }) => {
+const Canvas = observer<CanvasProps>(({ worker }) => {
   const { result } = useContext(VideoContext)
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -43,7 +43,30 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
     const ctx = canvas.getContext('2d') ?? never()
 
+    const imageDataCanvas = document.createElement('canvas')
+    imageDataCanvas.width = video.videoWidth
+    imageDataCanvas.height = video.videoHeight
+    const imageDataCtx = imageDataCanvas.getContext('2d') ?? never()
+
     return repeatedAnimationFrame(async () => {
+      // Calculate poses
+      imageDataCtx.drawImage(video, 0, 0)
+      const imageData = imageDataCtx.getImageData(0, 0, video.videoWidth, video.videoHeight)
+      worker.postMessage(imageData)
+      console.time('Estimate Poses')
+      const poses = await new Promise<Pose[]>((resolve, reject) => {
+        worker.onerror = reject
+        worker.onmessageerror = reject
+        worker.onmessage = ({ data }) => {
+          if (data instanceof Array) {
+            resolve(data)
+          } else {
+            reject(new Error('Error estimating poses'))
+          }
+        }
+      })
+      console.timeEnd('Estimate Poses')
+
       // Draw the image
       // Because the image from camera is mirrored, need to flip horizontally.
       ctx.translate(canvas.width, 0)
@@ -51,8 +74,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       ctx.drawImage(video, 0, 0)
       ctx.resetTransform()
 
-      // Calculate poses
-      const poses = await detector.estimatePoses(video, { flipHorizontal: true })
       // Figure out if left and right hands are raised
       const handsRaised = handMap.map(({ wrist, elbow }) => {
         if (poses[0] === undefined) return false
@@ -90,8 +111,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       ctx.font = '60px solid'
       // Draw hand emojis if left / right hands are raised
       if (handsRaised[0]) ctx.fillText('\u{270B}', 0, 10)
-      ctx.translate(canvas.width, 0)
       // Draw the right one flipped so it looks like a right hand
+      ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
       if (handsRaised[1]) ctx.fillText('\u{270B}', 0, 10)
       ctx.resetTransform()
