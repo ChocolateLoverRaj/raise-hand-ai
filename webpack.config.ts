@@ -22,6 +22,9 @@ const config: Configuration = {
         ],
         presets: ['@babel/preset-react', '@babel/preset-typescript']
       }
+    }, {
+      test: /\.css$/i,
+      use: ['style-loader', 'css-loader']
     }]
   },
   resolve: {
