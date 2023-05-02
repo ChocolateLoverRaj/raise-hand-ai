@@ -55,6 +55,7 @@
     "react-circular-progressbar": "^2.1.0",
     "react-dom": "^17.0.2",
     "react-head": "^3.4.0",
+    "react-icons": "^4.8.0",
     "react-use-effect-async": "^1.0.2",
     "rooks": "^7.11.2",
     "smallest-enclosing-circle": "^1.0.2"

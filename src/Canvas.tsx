@@ -8,13 +8,15 @@ import { Hand, HandDetector } from '@tensorflow-models/hand-pose-detection'
 import { HAND_CONNECTIONS } from '@mediapipe/hands'
 import fp from 'fingerpose'
 import FixedHeightMessage from './fixedHeightMessage/FixedHeightMessage'
-import { useFreshRef } from 'rooks'
+import { useFreshRef, useWindowSize } from 'rooks'
 import { CircularProgressbarWithChildren } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
 import useDateNow from './useDateNow'
 import getEnclosingCircle from 'smallest-enclosing-circle'
 import Delaunator from 'delaunator'
 import bc from 'barycentric-coordinates'
+import { createPortal } from 'react-dom'
+import { IoHandLeft, IoHandRight } from 'react-icons/io5'
 
 // From https://stackoverflow.com/a/35626468/11145447
 // Match on digit at least once, optional decimal, and optional digits
@@ -70,6 +72,10 @@ interface CalibrationStates {
   [Stage.DONE_CALIBRATING]: {
     hand: Hand['handedness']
     calibratedPoints: Position[]
+    /**
+     * This is normalized ([0, 1])
+     */
+    pos: Position | undefined
   }
 }
 const handStayStillWithinRadius = 15
@@ -113,6 +119,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   const thumbsUpTime = 3000
   const now = useDateNow()
   const thumbsUpProgressSize = 100
+  const { innerWidth, innerHeight } = useWindowSize()
 
   useEffect(() => {
     if (!(playPromise.wasExecuted || playPromise.isExecuting)) {
@@ -227,13 +234,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
           const { gestures } = gestureEstimator.estimate(keypoints3D, 9.2)
           return (gestures as any[]).some(({ name }) => name === 'thumbs_up')
         })
-        setCalibrationState({
-          ...calibrationState,
-          data: {
-            ...calibrationState.data,
-            thumbsUpHands
-          }
-        })
         if (thumbsUpHands.length === 1) {
           if (thumbsUpHands[0].handedness === calibrationState.data.thumbsUpHand?.hand) {
             const newThumbsUpHand: ThumbsUpHand = {
@@ -257,7 +257,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                 ...calibrationState,
                 data: {
                   ...calibrationState.data,
-                  thumbsUpHand: newThumbsUpHand
+                  thumbsUpHand: newThumbsUpHand,
+                  thumbsUpHands
                 }
               })
             }
@@ -282,7 +283,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
             ...calibrationState,
             data: {
               ...calibrationState.data,
-              thumbsUpHand: undefined
+              thumbsUpHand: undefined,
+              thumbsUpHands
             }
           })
         }
@@ -345,7 +347,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               stage: Stage.DONE_CALIBRATING,
               data: {
                 hand: calibrationState.data.hand,
-                calibratedPoints: newCalibratedPoints
+                calibratedPoints: newCalibratedPoints,
+                pos: undefined
               }
             })
           } else {
@@ -458,15 +461,16 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               throw new Error('Invalid corner')
           }
 
-          ctx.fillStyle = 'mediumseagreen'
-          const size = 100
-          const x = 50
-          const y = 50
-          ctx.fillRect(x, y, size, size)
-          ctx.beginPath()
-          ctx.arc(50 + normalizedX * size, 50 + normalizedY * size, 5, 0, 2 * Math.PI)
-          ctx.fillStyle = 'turquoise'
-          ctx.fill()
+          setCalibrationState({
+            ...calibrationState,
+            data: {
+              ...calibrationState.data,
+              pos: {
+                x: normalizedX,
+                y: normalizedY
+              }
+            }
+          })
         }
       }
     })
@@ -552,6 +556,21 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       </div>
       {playPromise.isExecuting && 'Playing video'}
       {playPromise.isError && 'Error playing video'}
+      {calibrationState.stage === Stage.DONE_CALIBRATING && calibrationState.data.pos !== undefined && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: calibrationState.data.pos.y * (innerHeight ?? 0) - 50,
+            left: calibrationState.data.pos.x * (innerWidth ?? 0) - 50 / 2,
+            color: 'red',
+            fontSize: 50
+          }}
+        >
+          {calibrationState.data.hand === 'Left'
+            ? <IoHandLeft />
+            : <IoHandRight />}
+        </div>,
+        document.body)}
     </>
   )
 })
