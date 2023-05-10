@@ -53,7 +53,14 @@ interface ThumbsUpHand {
   hand: Hand['handedness']
   startTime: number
   pos: Position
+  /**
+   * This is to prevent flickering
+   */
+  lastTime: number
 }
+
+const maxFlickerTime = 200
+
 interface PosInHistory {
   pos: Position
   time: number
@@ -175,8 +182,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
       // Calculate poses
       imageDataCtx.drawImage(video, 0, 0)
-      const imageData = imageDataCtx.getImageData(0, 0, video.videoWidth, video.videoHeight)
-      const hands = await detector.estimateHands(imageData, { flipHorizontal: true })
+      const hands = await detector.estimateHands(video, { flipHorizontal: true })
       const now = Date.now()
       const timeToRender = now - lastRender
       lastRender = now
@@ -241,7 +247,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               pos: {
                 x: thumbsUpHands[0].keypoints[0].x,
                 y: thumbsUpHands[0].keypoints[0].y
-              }
+              },
+              lastTime: now
             }
             if (now >= calibrationState.data.thumbsUpHand.startTime + thumbsUpTime) {
               setCalibrationState({
@@ -269,16 +276,20 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                 ...calibrationState.data,
                 thumbsUpHand: {
                   hand: thumbsUpHands[0].handedness,
-                  startTime: Date.now(),
+                  startTime: now,
                   pos: {
                     x: thumbsUpHands[0].keypoints[0].x,
                     y: thumbsUpHands[0].keypoints[0].y
-                  }
+                  },
+                  lastTime: now
                 }
               }
             })
           }
-        } else {
+        } else if (
+          calibrationState.data.thumbsUpHand !== undefined &&
+          calibrationState.data.thumbsUpHand.lastTime + maxFlickerTime < now
+        ) {
           setCalibrationState({
             ...calibrationState,
             data: {
