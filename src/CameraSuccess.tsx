@@ -4,11 +4,23 @@ import Detector from './Detector'
 
 const CameraSuccess: FC = () => {
   return (
-    <>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}
+    >
       <ChooseCamera />
       <br />
-      <Detector />
-    </>
+      <div
+        style={{
+          flexGrow: 1
+        }}
+      >
+        <Detector />
+      </div>
+    </div>
   )
 }
 

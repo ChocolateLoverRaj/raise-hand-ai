@@ -17,6 +17,7 @@ import Delaunator from 'delaunator'
 import bc from 'barycentric-coordinates'
 import { createPortal } from 'react-dom'
 import { IoHandLeft, IoHandRight } from 'react-icons/io5'
+import aspectFit from 'aspect-fit'
 
 // From https://stackoverflow.com/a/35626468/11145447
 // Match on digit at least once, optional decimal, and optional digits
@@ -199,12 +200,21 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
         ...rightHand !== undefined ? [rightHand] : []
       ]
 
+      const { offsetWidth, offsetHeight } = canvasContainerRef.current ?? never()
+      const { videoWidth, videoHeight } = videoRef.current ?? never()
+      const { scale } = aspectFit(videoWidth, videoHeight, offsetWidth, offsetHeight)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.resetTransform()
+      ctx.scale(scale, scale)
+
       // Draw the image
       // Because the image from camera is mirrored, need to flip horizontally.
-      ctx.translate(canvas.width, 0)
+      const transformBefore = ctx.getTransform()
+      // ctx.setTransform(transformBefore.flipX())
+      ctx.translate(canvas.width / scale, 0)
       ctx.scale(-1, 1)
       ctx.drawImage(video, 0, 0)
-      ctx.resetTransform()
+      ctx.setTransform(transformBefore)
 
       ctx.fillStyle = 'purple'
       if (now - lastFpsUpdate.time >= fpsUpdateMs) {
@@ -497,8 +507,38 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     DONE_CALIBRATING
   }
 
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      const { offsetWidth, offsetHeight } = canvasContainerRef.current ?? never()
+      const { videoWidth, videoHeight } = videoRef.current ?? never()
+      const { width, height } = aspectFit(videoWidth, videoHeight, offsetWidth, offsetHeight)
+      const canvas = canvasRef.current ?? never()
+      canvas.width = width
+      canvas.height = height
+    })
+    resizeObserver.observe(canvasContainerRef.current ?? never())
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
+
+  const getScale = (): number | undefined => {
+    if (canvasContainerRef.current === null || videoRef.current === null) return undefined
+    const { offsetWidth, offsetHeight } = canvasContainerRef.current
+    const { videoWidth, videoHeight } = videoRef.current
+    const { scale } = aspectFit(videoWidth, videoHeight, offsetWidth, offsetHeight)
+    return scale
+  }
+
   return (
-    <>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}
+    >
       <video ref={videoRef} hidden />
       <FixedHeightMessage
         messages={[{
@@ -543,16 +583,19 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       />
       <div
         style={{
-          position: 'relative'
+          position: 'relative',
+          flexGrow: 1,
+          overflow: 'hidden'
         }}
+        ref={canvasContainerRef}
       >
         <canvas ref={canvasRef} />
         {calibrationState.stage === Stage.RAISE_THUMB_TO_CALIBRATE && calibrationState.data.thumbsUpHand !== undefined && (
           <div
             style={{
               position: 'absolute',
-              top: calibrationState.data.thumbsUpHand.pos.y - thumbsUpProgressSize / 2,
-              left: calibrationState.data.thumbsUpHand.pos.x - thumbsUpProgressSize / 2,
+              top: (calibrationState.data.thumbsUpHand.pos.y - thumbsUpProgressSize / 2) * (getScale() ?? never()),
+              left: (calibrationState.data.thumbsUpHand.pos.x - thumbsUpProgressSize / 2) * (getScale() ?? never()),
               width: thumbsUpProgressSize,
               height: thumbsUpProgressSize,
               backgroundColor: 'gray',
@@ -582,7 +625,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
             : <IoHandRight />}
         </div>,
         document.body)}
-    </>
+    </div>
   )
 })
 

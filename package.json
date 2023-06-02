@@ -45,6 +45,7 @@
     "@tensorflow/tfjs-backend-webgl": "^3.21.0",
     "@tensorflow/tfjs-converter": "^3.21.0",
     "@tensorflow/tfjs-core": "^3.21.0",
+    "aspect-fit": "^1.0.2",
     "barycentric-coordinates": "^0.0.7",
     "delaunator": "^5.0.0",
     "fingerpose": "github:ErickWendel/fingerpose#f28cd7c",
