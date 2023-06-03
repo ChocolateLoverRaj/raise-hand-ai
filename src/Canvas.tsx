@@ -183,7 +183,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
       // Calculate poses
       imageDataCtx.drawImage(video, 0, 0)
-      const hands = await detector.estimateHands(video, { flipHorizontal: true })
+      const hands = await detector.estimateHands(video, { flipHorizontal: true, staticImageMode: false })
       const now = Date.now()
       const timeToRender = now - lastRender
       lastRender = now
