@@ -7,11 +7,11 @@ import { ObservablePromise } from 'mobx-observable-promise'
 import { PoseDetector, SupportedModels, util } from '@tensorflow-models/pose-detection'
 import useResizeObserver from 'use-resize-observer'
 import aspectFit from 'aspect-fit'
-import colorBetween from 'color-between'
 import handMap from './handMap'
 import Side from './raiseHandProgress/Side'
 import RaiseHandProgress from './raiseHandProgress/RaiseHandProgress'
 import { useFreshRef } from 'rooks'
+import drawPoses from './drawPoses'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -88,7 +88,16 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     imageDataCanvas.height = video.videoHeight
     const imageDataCtx = imageDataCanvas.getContext('2d') ?? never()
 
-    return repeatedAnimationFrame(async () => {
+    const cleanupFns: Array<() => void> = []
+
+    let raiseHandTimeoutId: any | undefined
+    const clearRaiseHandTimeout = (): void => {
+      clearTimeout(raiseHandTimeoutId)
+      raiseHandTimeoutId = undefined
+    }
+    cleanupFns.push(clearRaiseHandTimeout)
+
+    cleanupFns.push(repeatedAnimationFrame(async () => {
       const { scale } = aspectFit(video.videoWidth, video.videoHeight, container.offsetWidth, container.offsetHeight)
       ctx.resetTransform()
       ctx.scale(scale, scale)
@@ -106,27 +115,10 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       ctx.drawImage(video, 0, 0)
       ctx.setTransform(transformBefore)
 
+      drawPoses(ctx, 0.5, poses)
+
       poses.forEach(pose => {
         if (pose.score !== undefined && pose.score < 0.5) return
-
-        pose.keypoints.forEach(({ score, x, y }) => {
-          ctx.fillStyle = colorBetween('#ff0000', '#00ff00', score ?? 1, 'hex')
-          ctx.beginPath()
-          ctx.arc(x, y, 5, 0, 2 * Math.PI, false)
-          ctx.fill()
-        })
-
-        util.getAdjacentPairs(SupportedModels.BlazePose).forEach(([a, b]) => {
-          const pointA = pose.keypoints[a]
-          const pointB = pose.keypoints[b]
-
-          ctx.lineWidth = 2
-          ctx.strokeStyle = colorBetween('#ff0000', '#00ff00', ((pointA.score ?? 1) + (pointB.score ?? 1)) / 2, 'hex')
-          ctx.beginPath()
-          ctx.moveTo(pointA.x, pointA.y)
-          ctx.lineTo(pointB.x, pointB.y)
-          ctx.stroke()
-        })
 
         const faceY = pose.keypoints3D?.[0].y ?? never()
         const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
@@ -136,6 +128,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
         if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
           if (raisedHandsRef.current.count !== 2) {
             setRaisedHands({ count: 2 })
+            clearRaiseHandTimeout()
           }
         } else {
           const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
@@ -148,15 +141,20 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                   startTime: Date.now()
                 }
               })
+              raiseHandTimeoutId = setTimeout(() => {
+                console.log('show calibration tutorial')
+              }, 1000)
             }
           } else {
             if (raisedHandsRef.current.count !== 0) {
               setRaisedHands({ count: 0 })
+              clearRaiseHandTimeout()
             }
           }
         }
       })
-    })
+    }))
+    return () => cleanupFns.forEach(fn => fn())
   }, [playPromise.wasSuccessful])
 
   return (
