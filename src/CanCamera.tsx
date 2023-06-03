@@ -14,8 +14,10 @@ const CanCamera = observer(() => {
       })
       return mediaStream
     })
+    const selectedDeviceId = localStorage.getItem('cameraDeviceId') ?? undefined
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    observablePromise.execute().catch()
+    observablePromise.execute(selectedDeviceId).catch()
+    // eslint-disable-next-line @typescript-eslint/return-await
     return observablePromise
   })
 

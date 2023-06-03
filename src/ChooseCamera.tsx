@@ -18,8 +18,10 @@ const ChooseCamera = observer(() => {
         ? (
           <select
             value={videoPromise.result.getVideoTracks()[0].getSettings().deviceId}
-            onChange={async ({ target: { value: deviceId } }) =>
-              await switchCamera(videoPromise, deviceId)}
+            onChange={async ({ target: { value: deviceId } }) => {
+              await switchCamera(videoPromise, deviceId)
+              localStorage.setItem('cameraDeviceId', deviceId)
+            }}
           >
             {mobxMediaDevices.result
               .filter(({ kind }) => kind === 'videoinput')

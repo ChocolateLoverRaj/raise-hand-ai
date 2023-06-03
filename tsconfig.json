@@ -4,10 +4,16 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "noEmit": true,
-    "module": "CommonJS",
-    "moduleResolution": "Node"
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES2022"
   },
   "exclude": [
     "./node_modules"
-  ]
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }
