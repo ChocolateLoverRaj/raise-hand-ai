@@ -4,7 +4,7 @@ import VideoContext from './VideoContext'
 import never from 'never'
 import repeatedAnimationFrame from './repeatedAnimationFrame'
 import { ObservablePromise } from 'mobx-observable-promise'
-import { PoseDetector, SupportedModels, util } from '@tensorflow-models/pose-detection'
+import { PoseDetector } from '@tensorflow-models/pose-detection'
 import useResizeObserver from 'use-resize-observer'
 import aspectFit from 'aspect-fit'
 import handMap from './handMap'
@@ -12,6 +12,9 @@ import Side from './raiseHandProgress/Side'
 import RaiseHandProgress from './raiseHandProgress/RaiseHandProgress'
 import { useFreshRef } from 'rooks'
 import drawPoses from './drawPoses'
+import * as Tone from 'tone'
+import { IoArrowBack, IoArrowForward } from 'react-icons/io5'
+import sideNames from './sideNames'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -66,10 +69,27 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   } | {
     count: 0
   }
-  const [raisedHands, setRaisedHands] = useState<RaisedHands>({
-    count: 0
+  enum State {
+    RAISE_HAND,
+    CALIBRATE_TUTORIAL
+  }
+  type StateData = {
+    state: State.RAISE_HAND
+    data: RaisedHands
+  } | {
+    state: State.CALIBRATE_TUTORIAL
+    data: {
+      side: Side
+    }
+  }
+
+  const [stateData, setStateData] = useState<StateData>({
+    state: State.RAISE_HAND,
+    data: {
+      count: 0
+    }
   })
-  const raisedHandsRef = useFreshRef(raisedHands)
+  const stateDataRef = useFreshRef(stateData)
 
   useEffect(() => {
     if (!(playPromise.wasExecuted || playPromise.isExecuting)) {
@@ -117,43 +137,70 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
       drawPoses(ctx, 0.5, poses)
 
-      poses.forEach(pose => {
-        if (pose.score !== undefined && pose.score < 0.5) return
+      const currentState = stateDataRef.current
+      if (currentState.state === State.RAISE_HAND) {
+        poses.forEach(pose => {
+          if (pose.score !== undefined && pose.score < 0.5) return
 
-        const faceY = pose.keypoints3D?.[0].y ?? never()
-        const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
-          const { y } = pose.keypoints3D?.[wrist] ?? never()
-          return [side, y < faceY]
-        }))
-        if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
-          if (raisedHandsRef.current.count !== 2) {
-            setRaisedHands({ count: 2 })
-            clearRaiseHandTimeout()
-          }
-        } else {
-          const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
-          if (raisedHand !== undefined) {
-            if (raisedHandsRef.current.count !== 1 || raisedHandsRef.current.data.side !== raisedHand) {
-              setRaisedHands({
-                count: 1,
+          const faceY = pose.keypoints3D?.[0].y ?? never()
+          const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
+            const { y } = pose.keypoints3D?.[wrist] ?? never()
+            return [side, y < faceY]
+          }))
+          if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
+            if (currentState.data.count !== 2) {
+              setStateData({
+                state: State.RAISE_HAND,
                 data: {
-                  side: raisedHand,
-                  startTime: Date.now()
+                  count: 2
                 }
               })
-              raiseHandTimeoutId = setTimeout(() => {
-                console.log('show calibration tutorial')
-              }, 1000)
-            }
-          } else {
-            if (raisedHandsRef.current.count !== 0) {
-              setRaisedHands({ count: 0 })
               clearRaiseHandTimeout()
             }
+          } else {
+            const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
+            if (raisedHand !== undefined) {
+              if (currentState.data.count !== 1 || currentState.data.data.side !== raisedHand) {
+                clearRaiseHandTimeout()
+                setStateData({
+                  state: State.RAISE_HAND,
+                  data: {
+                    count: 1,
+                    data: {
+                      side: raisedHand,
+                      startTime: Date.now()
+                    }
+                  }
+                })
+                raiseHandTimeoutId = setTimeout(() => {
+                  const synth = new Tone.Synth().toDestination()
+                  synth.triggerAttackRelease('C5', '4n')
+                  setStateData({
+                    state: State.CALIBRATE_TUTORIAL,
+                    data: {
+                      side: raisedHand
+                    }
+                  })
+                }, 1000)
+              }
+            } else {
+              if (currentState.data.count !== 0) {
+                setStateData({
+                  state: State.RAISE_HAND,
+                  data: {
+                    count: 0
+                  }
+                })
+                clearRaiseHandTimeout()
+              }
+            }
           }
-        }
-      })
+        })
+      } else if (stateDataRef.current.state === State.CALIBRATE_TUTORIAL) {
+        console.log('calibrate tutorial')
+      }
     }))
+
     return () => cleanupFns.forEach(fn => fn())
   }, [playPromise.wasSuccessful])
 
@@ -183,20 +230,46 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               position: 'relative'
             }}
           >
-            <h1>
-              {new Map<number, string>([
-                [0, 'Raise Hand Above Face to Continue'],
-                [1, 'Keep your hand raised'],
-                [2, 'Only raise one hand']
-              ]).get(raisedHands.count) ?? never()}
-            </h1>
-            {/* The progress bar when u raise ur hand */}
-            {raisedHands.count === 1 && (
-              <RaiseHandProgress
-                side={raisedHands.data.side}
-                startTime={raisedHands.data.startTime}
-                totalTime={raiseHandTime}
-              />)}
+            {stateData.state === State.RAISE_HAND && (
+              <>
+                <h1>
+                  {new Map<number, string>([
+                    [0, 'Raise Hand Above Face to Continue'],
+                    [1, 'Keep your hand raised'],
+                    [2, 'Only raise one hand']
+                  ]).get(stateData.data.count) ?? never()}
+                </h1>
+                {/* The progress bar when u raise ur hand */}
+                {stateData.data.count === 1 && (
+                  <RaiseHandProgress
+                    side={stateData.data.data.side}
+                    startTime={stateData.data.data.startTime}
+                    totalTime={raiseHandTime}
+                  />)}
+              </>)}
+            {stateData.state === State.CALIBRATE_TUTORIAL && (
+              <>
+                <h1>Calibrate {sideNames.get(stateData.data.side)} hand</h1>
+                <h2>After this message, move ur hand to the bottom left corner</h2>
+                <div
+                  style={{
+                    display: 'grid',
+                    width: '100%',
+                    gridTemplateColumns: '1fr 1fr',
+                    verticalAlign: 'middle'
+                  }}
+                >
+                  <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <IoArrowBack />
+                    Raise {sideNames.get(1 - stateData.data.side)} hand to go back to change the calibration hand.
+                  </h2>
+                  <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    Raise {sideNames.get(stateData.data.side)} hand to continue
+                    <IoArrowForward />
+                  </h2>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

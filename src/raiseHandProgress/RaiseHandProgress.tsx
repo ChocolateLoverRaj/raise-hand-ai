@@ -8,7 +8,7 @@ const RaiseHandProgress: FC<Props> = ({ side, startTime, totalTime }) => {
 
   useLayoutEffect(() => {
     const synth = new Tone.Synth().toDestination()
-    synth.triggerAttackRelease('C4', 1)
+    synth.triggerAttackRelease('C4', totalTime)
 
     ref.current?.animate([{
       width: '0%',
