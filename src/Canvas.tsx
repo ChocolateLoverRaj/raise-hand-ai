@@ -13,8 +13,12 @@ import RaiseHandProgress from './raiseHandProgress/RaiseHandProgress'
 import { useFreshRef } from 'rooks'
 import drawPoses from './drawPoses'
 import * as Tone from 'tone'
-import { IoArrowBack, IoArrowForward } from 'react-icons/io5'
 import sideNames from './sideNames'
+import Data from './handYesNo/Data'
+import HandYesNo from './handYesNo/HandYesNo'
+import create from './handYesNo/create'
+import cleanup from './handYesNo/cleanup'
+import tick from './handYesNo/tick'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -78,9 +82,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     data: RaisedHands
   } | {
     state: State.CALIBRATE_TUTORIAL
-    data: {
-      side: Side
-    }
+    data: Data
   }
 
   const [stateData, setStateData] = useState<StateData>({
@@ -174,13 +176,25 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                 })
                 raiseHandTimeoutId = setTimeout(() => {
                   const synth = new Tone.Synth().toDestination()
-                  synth.triggerAttackRelease('C5', '4n')
-                  setStateData({
-                    state: State.CALIBRATE_TUTORIAL,
-                    data: {
-                      side: raisedHand
+                  synth.triggerAttackRelease('D4', '4n')
+                  const data = create(1000, raisedHand, yes => {
+                    if (yes) {
+                      console.log('yes')
+                    } else {
+                      setStateData({
+                        state: State.RAISE_HAND,
+                        data: { count: 0 }
+                      })
+                      const dist = new Tone.Distortion(1).toDestination()
+                      const synth = new Tone.Synth().connect(dist)
+                      synth.triggerAttackRelease('C2', '4n')
                     }
                   })
+                  setStateData({
+                    state: State.CALIBRATE_TUTORIAL,
+                    data: data
+                  })
+                  cleanupFns.push(() => cleanup(data))
                 }, 1000)
               }
             } else {
@@ -197,7 +211,10 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
           }
         })
       } else if (stateDataRef.current.state === State.CALIBRATE_TUTORIAL) {
-        console.log('calibrate tutorial')
+        tick(stateDataRef.current.data, newData => setStateData({
+          state: State.CALIBRATE_TUTORIAL,
+          data: newData
+        }), poses[0])
       }
     }))
 
@@ -249,9 +266,14 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               </>)}
             {stateData.state === State.CALIBRATE_TUTORIAL && (
               <>
-                <h1>Calibrate {sideNames.get(stateData.data.side)} hand</h1>
+                <h1>Calibrate {sideNames.get(stateData.data.yesHand)} hand</h1>
                 <h2>After this message, move ur hand to the bottom left corner</h2>
-                <div
+                <HandYesNo
+                  data={stateData.data}
+                  noNode={<>Raise {sideNames.get(1 - stateData.data.yesHand)} hand to go back to change the calibration hand.</>}
+                  yesNode={<>Raise {sideNames.get(stateData.data.yesHand)} hand to continue</>}
+                />
+                {/* <div
                   style={{
                     display: 'grid',
                     width: '100%',
@@ -267,7 +289,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                     Raise {sideNames.get(stateData.data.side)} hand to continue
                     <IoArrowForward />
                   </h2>
-                </div>
+                </div> */}
               </>
             )}
           </div>
