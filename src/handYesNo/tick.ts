@@ -27,17 +27,18 @@ const tick = (data: Data, setData: (newData: Data) => void, pose: Pose): void =>
     if (raisedHand !== undefined) {
       if (!data.raised || data.raisedData.side !== raisedHand) {
         resetTimeout(data)
+        const timeoutId = setTimeout(() => {
+          data.onResult(raisedHand === data.yesHand)
+        }, data.raiseTime)
         setData({
           ...data,
           raised: true,
           raisedData: {
             side: raisedHand,
             startTime: Date.now()
-          }
+          },
+          timeoutId
         })
-        data.timeoutId = setTimeout(() => {
-          data.onResult(raisedHand === data.yesHand)
-        }, data.raiseTime)
       }
     } else {
       setNotRaised()
