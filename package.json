@@ -4,7 +4,7 @@
   "scripts": {
     "start": "webpack serve",
     "lint": "eslint .",
-    "build": "webpack",
+    "build": "webpack && cp-cli node_modules/@mediapipe/pose/ dist",
     "postinstall": "symlink-dir node_modules/@mediapipe/pose public"
   },
   "devDependencies": {
