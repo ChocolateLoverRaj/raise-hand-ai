@@ -20,6 +20,7 @@ import create from './handYesNo/create'
 import cleanup from './handYesNo/cleanup'
 import tick from './handYesNo/tick'
 import areHandsAboveHead from './areHandsAboveHead'
+import draw from './dotPlacer/draw'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -248,6 +249,10 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
             }), poses[0])
           }
         }
+      } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
+        if (poses.length >= 1) {
+          draw(ctx, poses[0], currentState.data.side)
+        }
       }
     }))
 
@@ -322,7 +327,10 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                     )}
                   </>))}
             {stateData.state === State.CALIBRATE_BOTTOM_CORNER && (
-              <h1>Calibrate bottom {sideNames.get(1 - stateData.data.side)} corner</h1>
+              <h1>
+                Move ur {sideNames.get(stateData.data.side)} hand to the
+                bottom {sideNames.get(1 - stateData.data.side)} corner
+              </h1>
             )}
           </div>
         </div>

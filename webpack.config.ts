@@ -25,6 +25,9 @@ const config: Configuration = {
     }, {
       test: /\.css$/i,
       use: ['style-loader', 'css-loader']
+    }, {
+      test: /\.svg$/i,
+      type: 'asset'
     }]
   },
   resolve: {
