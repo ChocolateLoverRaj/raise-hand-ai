@@ -20,7 +20,7 @@ import createYesNo from './handYesNo/create'
 import cleanupYesNo from './handYesNo/cleanup'
 import tickHandYesNo from './handYesNo/tick'
 import areHandsAboveHead from './areHandsAboveHead'
-import draw from './dotPlacer/draw'
+import drawWithPose from './dotPlacer/drawWithPose'
 import tickDotPlacer from './dotPlacer/tick'
 import DotPlacerData from './dotPlacer/Data'
 import createDotPlacer from './dotPlacer/create'
@@ -28,6 +28,8 @@ import ProgressBar from './handYesNo/progressBar/ProgressBar'
 import YesSound from './handYesNo/yesSound/YesSound'
 import Position from './dotPlacer/Position'
 import cleanupDotPlacer from './dotPlacer/cleanup'
+import drawWithPosition from './dotPlacer/drawWithPosition'
+import drawCalibrationBox from './drawCalibrationBox/drawCalibrationBox'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -304,7 +306,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
           }
         } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
           if (poses.length >= 1) {
-            draw(ctx, poses[0], currentState.data.side)
+            drawWithPose(ctx, poses[0], currentState.data.side)
             const newYesNoData = tickHandYesNo(currentState.data.yesNo, poses[0])
             const newDotPlacerData = newYesNoData.raised
               ? cleanupDotPlacer(currentState.data.dotPlacer)
@@ -321,10 +323,16 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
             })
           }
         } else if (currentState.state === State.CONFIRM_BOTTOM_CORNER) {
+          drawCalibrationBox({
+            ctx,
+            bottomPoint: currentState.data.bottomCornerPosition,
+            topPoint: undefined,
+            bottomPointSide: currentState.data.side
+          })
+          drawWithPosition(ctx, currentState.data.bottomCornerPosition)
           if (poses.length >= 1) {
             setStateData({
-              ...stateDataRef.current,
-              state: State.CONFIRM_BOTTOM_CORNER,
+              ...currentState,
               data: {
                 ...currentState.data,
                 yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
