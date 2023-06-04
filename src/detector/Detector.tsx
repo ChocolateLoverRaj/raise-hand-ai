@@ -1,7 +1,7 @@
 import { ObservablePromise } from 'mobx-observable-promise'
 import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
-import Canvas from '../Canvas'
+import Canvas from '../canvas/Canvas'
 import Props from './Props'
 import { createDetector, SupportedModels } from '@tensorflow-models/pose-detection'
 import '@tensorflow/tfjs-backend-webgl'

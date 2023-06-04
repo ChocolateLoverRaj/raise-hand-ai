@@ -1,35 +1,34 @@
 import { observer } from 'mobx-react-lite'
 import { MutableRefObject, useContext, useEffect, useRef, useState } from 'react'
-import VideoContext from './VideoContext'
+import VideoContext from '../VideoContext'
 import never from 'never'
-import repeatedAnimationFrame from './repeatedAnimationFrame'
+import repeatedAnimationFrame from '../repeatedAnimationFrame'
 import { ObservablePromise } from 'mobx-observable-promise'
 import { PoseDetector } from '@tensorflow-models/pose-detection'
 import useResizeObserver from 'use-resize-observer'
 import aspectFit from 'aspect-fit'
-import handMap from './handMap'
-import Side from './raiseHandProgress/Side'
-import RaiseHandProgress from './raiseHandProgress/RaiseHandProgress'
+import handMap from '../handMap'
+import Side from '../raiseHandProgress/Side'
+import RaiseHandProgress from '../raiseHandProgress/RaiseHandProgress'
 import { useFreshRef } from 'rooks'
-import drawPoses from './drawPoses'
+import drawPoses from '../drawPoses'
 import * as Tone from 'tone'
-import sideNames from './sideNames'
-import YesNoData from './handYesNo/Data'
-import HandYesNo from './handYesNo/HandYesNo'
-import createYesNo from './handYesNo/create'
-import cleanupYesNo from './handYesNo/cleanup'
-import tickHandYesNo from './handYesNo/tick'
-import areHandsAboveHead from './areHandsAboveHead'
-import drawWithPose from './dotPlacer/drawWithPose'
-import tickDotPlacer from './dotPlacer/tick'
-import DotPlacerData from './dotPlacer/Data'
-import createDotPlacer from './dotPlacer/create'
-import ProgressBar from './handYesNo/progressBar/ProgressBar'
-import YesSound from './handYesNo/yesSound/YesSound'
-import Position from './dotPlacer/Position'
-import cleanupDotPlacer from './dotPlacer/cleanup'
-import drawWithPosition from './dotPlacer/drawWithPosition'
-import drawCalibrationBox from './drawCalibrationBox/drawCalibrationBox'
+import sideNames from '../sideNames'
+import HandYesNo from '../handYesNo/HandYesNo'
+import createYesNo from '../handYesNo/create'
+import cleanupYesNo from '../handYesNo/cleanup'
+import tickHandYesNo from '../handYesNo/tick'
+import areHandsAboveHead from '../areHandsAboveHead'
+import drawWithPose from '../dotPlacer/drawWithPose'
+import tickDotPlacer from '../dotPlacer/tick'
+import createDotPlacer from '../dotPlacer/create'
+import ProgressBar from '../handYesNo/progressBar/ProgressBar'
+import YesSound from '../handYesNo/yesSound/YesSound'
+import cleanupDotPlacer from '../dotPlacer/cleanup'
+import drawWithPosition from '../dotPlacer/drawWithPosition'
+import drawCalibrationBox from '../drawCalibrationBox/drawCalibrationBox'
+import StateData from './StateData'
+import State from './State'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -71,49 +70,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       const fit = aspectFit(video.videoWidth, video.videoHeight, width, height)
       ;(canvas.width as any) = fit.width
       ;(canvas.height as any) = fit.height
-    }
-  })
-
-  interface RaisedHand {
-    startTime: number
-    side: Side
-  }
-  type RaisedHands = {
-    count: 2
-  } | {
-    count: 1
-    data: RaisedHand
-  } | {
-    count: 0
-  }
-  enum State {
-    RAISE_HAND,
-    CONFIRM_HAND,
-    CALIBRATE_BOTTOM_CORNER,
-    CONFIRM_BOTTOM_CORNER
-  }
-  interface BaseStateData {
-    needsToLowerHand: boolean
-  }
-  type StateData = BaseStateData & ({
-    state: State.RAISE_HAND
-    data: RaisedHands
-  } | {
-    state: State.CONFIRM_HAND
-    data: YesNoData
-  } | {
-    state: State.CALIBRATE_BOTTOM_CORNER
-    data: {
-      side: Side
-      yesNo: YesNoData
-      dotPlacer: DotPlacerData
-    }
-  } | {
-    state: State.CONFIRM_BOTTOM_CORNER
-    data: {
-      side: Side
-      bottomCornerPosition: Position
-      yesNo: YesNoData
     }
   })
 
@@ -238,7 +194,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                                       synth.triggerAttackRelease('C5', '4n')
                                       console.log('calibrate top corner')
                                     } else {
-                                      console.log('back!')
                                       setStateToCalibrateBottomCorner()
                                     }
                                   }, true, true),
