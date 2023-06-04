@@ -290,12 +290,14 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               }
             })
           } else if (stateDataRef.current.state === State.CONFIRM_HAND) {
-            const newData = tickHandYesNo(stateDataRef.current.data, poses[0])
-            setStateData({
-              state: State.CONFIRM_HAND,
-              data: newData,
-              needsToLowerHand: false
-            })
+            if (poses.length >= 1) {
+              const newData = tickHandYesNo(stateDataRef.current.data, poses[0])
+              setStateData({
+                state: State.CONFIRM_HAND,
+                data: newData,
+                needsToLowerHand: false
+              })
+            }
           }
         }
       } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
@@ -316,13 +318,15 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
           })
         }
       } else if (currentState.state === State.CONFIRM_BOTTOM_CORNER) {
-        setStateData({
-          state: State.CONFIRM_BOTTOM_CORNER,
-          data: {
-            ...currentState.data,
-            yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
-          }
-        })
+        if (poses.length >= 1) {
+          setStateData({
+            state: State.CONFIRM_BOTTOM_CORNER,
+            data: {
+              ...currentState.data,
+              yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
+            }
+          })
+        }
       }
     }))
 
