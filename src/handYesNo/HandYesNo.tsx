@@ -6,7 +6,7 @@ import ProgressBar from './progressBar/ProgressBar'
 import NoSound from './NoSound'
 import YesSound from './YesSound'
 
-const HandYesNo: FC<Props> = ({ data, noNode, yesNode }) => {
+const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
   const { yesHand, raiseTime } = data
   const noHand = 1 - yesHand
 
@@ -20,22 +20,23 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode }) => {
       }}
     >
       <div>
-        <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <IoArrowBack />
-          {noHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
-          {noNode}
-        </h2>
-
+        {showNo && (
+          <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <IoArrowBack />
+            {noHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
+            {noNode}
+          </h2>)}
       </div>
       <div>
-        <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {yesNode}
-          {yesHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
-          <IoArrowForward />
-        </h2>
+        {showYes && (
+          <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {yesNode}
+            {yesHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
+            <IoArrowForward />
+          </h2>)}
       </div>
       <div>
-        {data.raised && data.raisedData.side === noHand && (
+        {showNo && data.raised && data.raisedData.side === noHand && (
           <>
             <ProgressBar
               startTime={data.raisedData.startTime}
@@ -49,7 +50,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode }) => {
         )}
       </div>
       <div>
-        {data.raised && data.raisedData.side === yesHand && (
+        {showYes && data.raised && data.raisedData.side === yesHand && (
           <>
             <ProgressBar
               startTime={data.raisedData.startTime}

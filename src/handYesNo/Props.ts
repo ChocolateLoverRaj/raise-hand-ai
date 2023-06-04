@@ -5,6 +5,8 @@ interface Props {
   data: Data
   noNode: ReactNode
   yesNode: ReactNode
+  showYes: boolean
+  showNo: boolean
 }
 
 export default Props
