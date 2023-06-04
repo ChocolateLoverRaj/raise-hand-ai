@@ -90,14 +90,15 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     CALIBRATE_BOTTOM_CORNER,
     CONFIRM_BOTTOM_CORNER
   }
-  type StateData = {
+  interface BaseStateData {
+    needsToLowerHand: boolean
+  }
+  type StateData = BaseStateData & ({
     state: State.RAISE_HAND
     data: RaisedHands
-    needsToLowerHand: boolean
   } | {
     state: State.CONFIRM_HAND
     data: YesNoData
-    needsToLowerHand: boolean
   } | {
     state: State.CALIBRATE_BOTTOM_CORNER
     data: {
@@ -112,7 +113,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       bottomCornerPosition: Position
       yesNo: YesNoData
     }
-  }
+  })
 
   const [stateData, setStateData] = useState<StateData>({
     state: State.RAISE_HAND,
@@ -170,162 +171,166 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       drawPoses(ctx, 0.5, poses)
 
       const currentState = stateDataRef.current
-      if (currentState.state === State.RAISE_HAND || currentState.state === State.CONFIRM_HAND) {
-        if (currentState.needsToLowerHand) {
-          if (!areHandsAboveHead(poses[0])) {
-            setStateData({
-              ...stateDataRef.current as any,
-              needsToLowerHand: false
-            })
-          }
-        } else {
-          if (currentState.state === State.RAISE_HAND) {
-            poses.forEach(pose => {
-              if (pose.score !== undefined && pose.score < 0.5) return
 
-              const faceY = pose.keypoints3D?.[0].y ?? never()
-              const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
-                const { y } = pose.keypoints3D?.[wrist] ?? never()
-                return [side, y < faceY]
-              }))
-              if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
-                if (currentState.data.count !== 2) {
+      if (currentState.needsToLowerHand) {
+        if (!areHandsAboveHead(poses[0])) {
+          setStateData({
+            ...stateDataRef.current as any,
+            needsToLowerHand: false
+          })
+        }
+      } else {
+        if (currentState.state === State.RAISE_HAND) {
+          poses.forEach(pose => {
+            if (pose.score !== undefined && pose.score < 0.5) return
+
+            const faceY = pose.keypoints3D?.[0].y ?? never()
+            const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
+              const { y } = pose.keypoints3D?.[wrist] ?? never()
+              return [side, y < faceY]
+            }))
+            if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
+              if (currentState.data.count !== 2) {
+                setStateData({
+                  state: State.RAISE_HAND,
+                  data: {
+                    count: 2
+                  },
+                  needsToLowerHand: false
+                })
+                clearRaiseHandTimeout()
+              }
+            } else {
+              const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
+              if (raisedHand !== undefined) {
+                if (currentState.data.count !== 1 || currentState.data.data.side !== raisedHand) {
+                  clearRaiseHandTimeout()
+                  setStateData({
+                    needsToLowerHand: false,
+                    state: State.RAISE_HAND,
+                    data: {
+                      count: 1,
+                      data: {
+                        side: raisedHand,
+                        startTime: Date.now()
+                      }
+                    }
+                  })
+                  raiseHandTimeoutId = setTimeout(() => {
+                    const synth = new Tone.Synth().toDestination()
+                    synth.triggerAttackRelease('D4', '4n')
+                    const setStateToConfirmHand = (): void => {
+                      const data = createYesNo(1000, raisedHand, yes => {
+                        if (yes) {
+                          synth.triggerAttackRelease('F4', '4n')
+                          const setStateToCalibrateBottomCorner = (): void => {
+                            const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
+                              synth.triggerAttackRelease('A4', '4n')
+                              setStateData({
+                                needsToLowerHand: true,
+                                state: State.CONFIRM_BOTTOM_CORNER,
+                                data: {
+                                  bottomCornerPosition: position,
+                                  yesNo: createYesNo(1000, raisedHand, yes => {
+                                    if (yes) {
+                                      synth.triggerAttackRelease('C5', '4n')
+                                      console.log('calibrate top corner')
+                                    } else {
+                                      console.log('back!')
+                                      setStateToCalibrateBottomCorner()
+                                    }
+                                  }, true, true),
+                                  side: raisedHand
+                                }
+                              })
+                            })
+                            setStateData({
+                              needsToLowerHand: true,
+                              state: State.CALIBRATE_BOTTOM_CORNER,
+                              data: {
+                                side: raisedHand,
+                                yesNo: createYesNo(1000, raisedHand, () => {
+                                  setStateToConfirmHand()
+                                }, true, false),
+                                dotPlacer: dotPlacer
+                              }
+                            })
+                            cleanupFns.push(() => cleanupDotPlacer(dotPlacer))
+                          }
+                          setStateToCalibrateBottomCorner()
+                        } else {
+                          setStateData({
+                            state: State.RAISE_HAND,
+                            data: { count: 0 },
+                            needsToLowerHand: true
+                          })
+                          const dist = new Tone.Volume(10).toDestination()
+                          const synth = new Tone.Synth().connect(dist)
+                          synth.triggerAttackRelease('C2', '4n')
+                        }
+                      }, true, true)
+                      setStateData({
+                        state: State.CONFIRM_HAND,
+                        data: data,
+                        needsToLowerHand: true
+                      })
+                      cleanupFns.push(() => cleanupYesNo(data))
+                    }
+                    setStateToConfirmHand()
+                  }, 1000)
+                }
+              } else {
+                if (currentState.data.count !== 0) {
                   setStateData({
                     state: State.RAISE_HAND,
                     data: {
-                      count: 2
+                      count: 0
                     },
                     needsToLowerHand: false
                   })
                   clearRaiseHandTimeout()
                 }
-              } else {
-                const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
-                if (raisedHand !== undefined) {
-                  if (currentState.data.count !== 1 || currentState.data.data.side !== raisedHand) {
-                    clearRaiseHandTimeout()
-                    setStateData({
-                      needsToLowerHand: false,
-                      state: State.RAISE_HAND,
-                      data: {
-                        count: 1,
-                        data: {
-                          side: raisedHand,
-                          startTime: Date.now()
-                        }
-                      }
-                    })
-                    raiseHandTimeoutId = setTimeout(() => {
-                      const synth = new Tone.Synth().toDestination()
-                      synth.triggerAttackRelease('D4', '4n')
-                      const setStateToConfirmHand = (): void => {
-                        const data = createYesNo(1000, raisedHand, yes => {
-                          if (yes) {
-                            synth.triggerAttackRelease('F4', '4n')
-                            const setStateToCalibrateBottomCorner = (): void => {
-                              const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
-                                synth.triggerAttackRelease('A4', '4n')
-                                setStateData({
-                                  state: State.CONFIRM_BOTTOM_CORNER,
-                                  data: {
-                                    bottomCornerPosition: position,
-                                    yesNo: createYesNo(1000, raisedHand, yes => {
-                                      if (yes) {
-                                        synth.triggerAttackRelease('C5', '4n')
-                                        console.log('calibrate top corner')
-                                      } else {
-                                        setStateToCalibrateBottomCorner()
-                                      }
-                                    }, true, true),
-                                    side: raisedHand
-                                  }
-                                })
-                              })
-                              setStateData({
-                                state: State.CALIBRATE_BOTTOM_CORNER,
-                                data: {
-                                  side: raisedHand,
-                                  yesNo: createYesNo(1000, raisedHand, () => {
-                                    setStateToConfirmHand()
-                                  }, true, false),
-                                  dotPlacer: dotPlacer
-                                }
-                              })
-                              cleanupFns.push(() => cleanupDotPlacer(dotPlacer))
-                            }
-                            setStateToCalibrateBottomCorner()
-                          } else {
-                            setStateData({
-                              state: State.RAISE_HAND,
-                              data: { count: 0 },
-                              needsToLowerHand: true
-                            })
-                            const dist = new Tone.Volume(10).toDestination()
-                            const synth = new Tone.Synth().connect(dist)
-                            synth.triggerAttackRelease('C2', '4n')
-                          }
-                        }, true, true)
-                        setStateData({
-                          state: State.CONFIRM_HAND,
-                          data: data,
-                          needsToLowerHand: true
-                        })
-                        cleanupFns.push(() => cleanupYesNo(data))
-                      }
-                      setStateToConfirmHand()
-                    }, 1000)
-                  }
-                } else {
-                  if (currentState.data.count !== 0) {
-                    setStateData({
-                      state: State.RAISE_HAND,
-                      data: {
-                        count: 0
-                      },
-                      needsToLowerHand: false
-                    })
-                    clearRaiseHandTimeout()
-                  }
-                }
+              }
+            }
+          })
+        } else if (stateDataRef.current.state === State.CONFIRM_HAND) {
+          if (poses.length >= 1) {
+            const newData = tickHandYesNo(stateDataRef.current.data, poses[0])
+            setStateData({
+              state: State.CONFIRM_HAND,
+              data: newData,
+              needsToLowerHand: false
+            })
+          }
+        } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
+          if (poses.length >= 1) {
+            draw(ctx, poses[0], currentState.data.side)
+            const newYesNoData = tickHandYesNo(currentState.data.yesNo, poses[0])
+            const newDotPlacerData = newYesNoData.raised
+              ? cleanupDotPlacer(currentState.data.dotPlacer)
+              : tickDotPlacer(currentState.data.dotPlacer, poses[0])
+
+            setStateData({
+              ...stateDataRef.current,
+              state: State.CALIBRATE_BOTTOM_CORNER,
+              data: {
+                ...currentState.data,
+                yesNo: newYesNoData,
+                dotPlacer: newDotPlacerData
               }
             })
-          } else if (stateDataRef.current.state === State.CONFIRM_HAND) {
-            if (poses.length >= 1) {
-              const newData = tickHandYesNo(stateDataRef.current.data, poses[0])
-              setStateData({
-                state: State.CONFIRM_HAND,
-                data: newData,
-                needsToLowerHand: false
-              })
-            }
           }
-        }
-      } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
-        if (poses.length >= 1) {
-          draw(ctx, poses[0], currentState.data.side)
-          const newYesNoData = tickHandYesNo(currentState.data.yesNo, poses[0])
-          const newDotPlacerData = newYesNoData.raised
-            ? cleanupDotPlacer(currentState.data.dotPlacer)
-            : tickDotPlacer(currentState.data.dotPlacer, poses[0])
-
-          setStateData({
-            state: State.CALIBRATE_BOTTOM_CORNER,
-            data: {
-              ...currentState.data,
-              yesNo: newYesNoData,
-              dotPlacer: newDotPlacerData
-            }
-          })
-        }
-      } else if (currentState.state === State.CONFIRM_BOTTOM_CORNER) {
-        if (poses.length >= 1) {
-          setStateData({
-            state: State.CONFIRM_BOTTOM_CORNER,
-            data: {
-              ...currentState.data,
-              yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
-            }
-          })
+        } else if (currentState.state === State.CONFIRM_BOTTOM_CORNER) {
+          if (poses.length >= 1) {
+            setStateData({
+              ...stateDataRef.current,
+              state: State.CONFIRM_BOTTOM_CORNER,
+              data: {
+                ...currentState.data,
+                yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
+              }
+            })
+          }
         }
       }
     }))
@@ -359,90 +364,89 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               position: 'relative'
             }}
           >
-            {(stateData.state === State.RAISE_HAND || stateData.state === State.CONFIRM_HAND) && (
-              stateData.needsToLowerHand
-                ? (
-                  <h1>Lower ur hand</h1>
-                  )
-                : (
+            {stateData.needsToLowerHand
+              ? (
+                <h1>Lower ur hand</h1>
+                )
+              : (
 
-                  <>
-                    {stateData.state === State.RAISE_HAND && (
-                      <>
-                        <h1>
-                          {new Map<number, string>([
-                            [0, 'Raise Hand Above Face to Continue'],
-                            [1, 'Keep your hand raised'],
-                            [2, 'Only raise one hand']
-                          ]).get(stateData.data.count) ?? never()}
-                        </h1>
-                        {/* The progress bar when u raise ur hand */}
-                        {stateData.data.count === 1 && (
-                          <RaiseHandProgress
-                            side={stateData.data.data.side}
-                            startTime={stateData.data.data.startTime}
-                            totalTime={raiseHandTime}
-                          />)}
-                      </>)}
-                    {stateData.state === State.CONFIRM_HAND && (
-                      <>
-                        <h1>Calibrate {sideNames.get(stateData.data.yesHand)} hand</h1>
-                        <h2>
-                          After this message, move ur hand to the
-                          bottom {sideNames.get(1 - stateData.data.yesHand)} corner and hold it there
-                          for {stayStillTime / 1000} seconds
-                        </h2>
-                        <HandYesNo
-                          data={stateData.data}
-                          noNode={<>Raise {sideNames.get(1 - stateData.data.yesHand)} hand to go back to change the calibration hand.</>}
-                          yesNode={<>Raise {sideNames.get(stateData.data.yesHand)} hand to continue</>}
-                          yesFrequency='E4'
-                        />
-                      </>
-                    )}
-                  </>))}
-            {stateData.state === State.CALIBRATE_BOTTOM_CORNER && (
-              <>
-                <h1>
-                  {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (Date.now() - stateData.data.dotPlacer.earliestPositionEntry.startTime) / stayStillTime > 0.25
-                    ? (
-                      <>
-                        Keep your hand in place
-                        <YesSound frequency='G4' />
-                      </>)
-                    : (
-                      <>Move ur {sideNames.get(stateData.data.side)} hand to the
-                        bottom {sideNames.get(1 - stateData.data.side)} corner
-                      </>)}
-                </h1>
-                {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (
-                  <>
-                    <ProgressBar
-                      startTime={stateData.data.dotPlacer.earliestPositionEntry.startTime}
-                      totalTime={stayStillTime}
-                      style={{
-                        backgroundColor: 'yellow'
-                      }}
-                    />
-                  </>)}
-                <HandYesNo
-                  data={stateData.data.yesNo}
-                  yesNode={undefined}
-                  noNode={undefined}
-                  yesFrequency={NaN}
-                />
-              </>
-            )}
-            {stateData.state === State.CONFIRM_BOTTOM_CORNER && (
-              <>
-                <h1>Confirm bottom {sideNames.get(1 - stateData.data.side)} corner position</h1>
-                <HandYesNo
-                  data={stateData.data.yesNo}
-                  noNode='Back'
-                  yesNode='Continue'
-                  yesFrequency='B4'
-                />
-              </>)}
+                <>
+                  {stateData.state === State.RAISE_HAND && (
+                    <>
+                      <h1>
+                        {new Map<number, string>([
+                          [0, 'Raise Hand Above Face to Continue'],
+                          [1, 'Keep your hand raised'],
+                          [2, 'Only raise one hand']
+                        ]).get(stateData.data.count) ?? never()}
+                      </h1>
+                      {/* The progress bar when u raise ur hand */}
+                      {stateData.data.count === 1 && (
+                        <RaiseHandProgress
+                          side={stateData.data.data.side}
+                          startTime={stateData.data.data.startTime}
+                          totalTime={raiseHandTime}
+                        />)}
+                    </>)}
+                  {stateData.state === State.CONFIRM_HAND && (
+                    <>
+                      <h1>Calibrate {sideNames.get(stateData.data.yesHand)} hand</h1>
+                      <h2>
+                        After this message, move ur hand to the
+                        bottom {sideNames.get(1 - stateData.data.yesHand)} corner and hold it there
+                        for {stayStillTime / 1000} seconds
+                      </h2>
+                      <HandYesNo
+                        data={stateData.data}
+                        noNode={<>Raise {sideNames.get(1 - stateData.data.yesHand)} hand to go back to change the calibration hand.</>}
+                        yesNode={<>Raise {sideNames.get(stateData.data.yesHand)} hand to continue</>}
+                        yesFrequency='E4'
+                      />
+                    </>
+                  )}
+                  {stateData.state === State.CALIBRATE_BOTTOM_CORNER && (
+                    <>
+                      <h1>
+                        {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (Date.now() - stateData.data.dotPlacer.earliestPositionEntry.startTime) / stayStillTime > 0.25
+                          ? (
+                            <>
+                              Keep your hand in place
+                              <YesSound frequency='G4' />
+                            </>)
+                          : (
+                            <>Move ur {sideNames.get(stateData.data.side)} hand to the
+                              bottom {sideNames.get(1 - stateData.data.side)} corner
+                            </>)}
+                      </h1>
+                      {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (
+                        <>
+                          <ProgressBar
+                            startTime={stateData.data.dotPlacer.earliestPositionEntry.startTime}
+                            totalTime={stayStillTime}
+                            style={{
+                              backgroundColor: 'yellow'
+                            }}
+                          />
+                        </>)}
+                      <HandYesNo
+                        data={stateData.data.yesNo}
+                        yesNode={undefined}
+                        noNode={undefined}
+                        yesFrequency={NaN}
+                      />
+                    </>
+                  )}
+                  {stateData.state === State.CONFIRM_BOTTOM_CORNER && (
+                    <>
+                      <h1>Confirm bottom {sideNames.get(1 - stateData.data.side)} corner position</h1>
+                      <HandYesNo
+                        data={stateData.data.yesNo}
+                        noNode='Back'
+                        yesNode='Continue'
+                        yesFrequency='B4'
+                      />
+                    </>)}
+                </>)}
           </div>
         </div>
       </div>
