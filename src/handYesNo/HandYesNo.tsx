@@ -4,10 +4,10 @@ import { IoArrowBack, IoArrowForward, IoHandLeft, IoHandRight } from 'react-icon
 import Side from '../raiseHandProgress/Side'
 import ProgressBar from './progressBar/ProgressBar'
 import NoSound from './NoSound'
-import YesSound from './YesSound'
+import YesSound from './yesSound/YesSound'
 
-const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
-  const { yesHand, raiseTime } = data
+const HandYesNo: FC<Props> = ({ data, noNode, yesNode, yesFrequency }) => {
+  const { yesHand, raiseTime, canNo, canYes } = data
   const noHand = 1 - yesHand
 
   return (
@@ -20,7 +20,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
       }}
     >
       <div>
-        {showNo && (
+        {canNo && (
           <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <IoArrowBack />
             {noHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
@@ -28,7 +28,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
           </h2>)}
       </div>
       <div>
-        {showYes && (
+        {canYes && (
           <h2 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             {yesNode}
             {yesHand === Side.LEFT ? <IoHandLeft /> : <IoHandRight />}
@@ -36,7 +36,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
           </h2>)}
       </div>
       <div>
-        {showNo && data.raised && data.raisedData.side === noHand && (
+        {canNo && data.raised && data.raisedData.side === noHand && (
           <>
             <ProgressBar
               startTime={data.raisedData.startTime}
@@ -50,7 +50,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
         )}
       </div>
       <div>
-        {showYes && data.raised && data.raisedData.side === yesHand && (
+        {canYes && data.raised && data.raisedData.side === yesHand && (
           <>
             <ProgressBar
               startTime={data.raisedData.startTime}
@@ -59,7 +59,7 @@ const HandYesNo: FC<Props> = ({ data, noNode, yesNode, showNo, showYes }) => {
                 backgroundColor: 'yellow'
               }}
             />
-            <YesSound />
+            <YesSound frequency={yesFrequency} />
           </>
         )}
       </div>

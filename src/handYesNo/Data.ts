@@ -6,6 +6,8 @@ interface BaseData {
   yesHand: Side
   timeoutId: any | undefined
   onResult: OnResult
+  canYes: boolean
+  canNo: boolean
 }
 
 type Data = BaseData & ({

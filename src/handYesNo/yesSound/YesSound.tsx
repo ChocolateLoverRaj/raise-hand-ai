@@ -1,10 +1,11 @@
 import { FC, useEffect } from 'react'
 import * as Tone from 'tone'
+import Props from './Props'
 
-const YesSound: FC = () => {
+const YesSound: FC<Props> = ({ frequency }) => {
   useEffect(() => {
     const synth = new Tone.Synth().toDestination()
-    synth.triggerAttack('E4')
+    synth.triggerAttack(frequency)
 
     return () => {
       synth.dispose()

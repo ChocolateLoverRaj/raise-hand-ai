@@ -14,13 +14,20 @@ import { useFreshRef } from 'rooks'
 import drawPoses from './drawPoses'
 import * as Tone from 'tone'
 import sideNames from './sideNames'
-import Data from './handYesNo/Data'
+import YesNoData from './handYesNo/Data'
 import HandYesNo from './handYesNo/HandYesNo'
-import create from './handYesNo/create'
-import cleanup from './handYesNo/cleanup'
-import tick from './handYesNo/tick'
+import createYesNo from './handYesNo/create'
+import cleanupYesNo from './handYesNo/cleanup'
+import tickHandYesNo from './handYesNo/tick'
 import areHandsAboveHead from './areHandsAboveHead'
 import draw from './dotPlacer/draw'
+import tickDotPlacer from './dotPlacer/tick'
+import DotPlacerData from './dotPlacer/Data'
+import createDotPlacer from './dotPlacer/create'
+import ProgressBar from './handYesNo/progressBar/ProgressBar'
+import YesSound from './handYesNo/yesSound/YesSound'
+import Position from './dotPlacer/Position'
+import cleanupDotPlacer from './dotPlacer/cleanup'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -28,6 +35,8 @@ export interface CanvasProps {
 }
 
 const raiseHandTime = 1000
+const stayStillTime = 2000
+const stayStillRadius = 20
 
 const Canvas = observer<CanvasProps>(({ detector }) => {
   const { result } = useContext(VideoContext)
@@ -78,7 +87,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   enum State {
     RAISE_HAND,
     CONFIRM_HAND,
-    CALIBRATE_BOTTOM_CORNER
+    CALIBRATE_BOTTOM_CORNER,
+    CONFIRM_BOTTOM_CORNER
   }
   type StateData = {
     state: State.RAISE_HAND
@@ -86,13 +96,21 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     needsToLowerHand: boolean
   } | {
     state: State.CONFIRM_HAND
-    data: Data
+    data: YesNoData
     needsToLowerHand: boolean
   } | {
     state: State.CALIBRATE_BOTTOM_CORNER
     data: {
       side: Side
-      yesNo: Data
+      yesNo: YesNoData
+      dotPlacer: DotPlacerData
+    }
+  } | {
+    state: State.CONFIRM_BOTTOM_CORNER
+    data: {
+      side: Side
+      bottomCornerPosition: Position
+      yesNo: YesNoData
     }
   }
 
@@ -201,20 +219,41 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                       const synth = new Tone.Synth().toDestination()
                       synth.triggerAttackRelease('D4', '4n')
                       const setStateToConfirmHand = (): void => {
-                        const data = create(1000, raisedHand, yes => {
+                        const data = createYesNo(1000, raisedHand, yes => {
                           if (yes) {
                             synth.triggerAttackRelease('F4', '4n')
-                            setStateData({
-                              state: State.CALIBRATE_BOTTOM_CORNER,
-                              data: {
-                                side: raisedHand,
-                                yesNo: create(1000, raisedHand, (yes) => {
-                                  if (!yes) {
-                                    setStateToConfirmHand()
+                            const setStateToCalibrateBottomCorner = (): void => {
+                              const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
+                                synth.triggerAttackRelease('A4', '4n')
+                                setStateData({
+                                  state: State.CONFIRM_BOTTOM_CORNER,
+                                  data: {
+                                    bottomCornerPosition: position,
+                                    yesNo: createYesNo(1000, raisedHand, yes => {
+                                      if (yes) {
+                                        synth.triggerAttackRelease('C5', '4n')
+                                        console.log('calibrate top corner')
+                                      } else {
+                                        setStateToCalibrateBottomCorner()
+                                      }
+                                    }, true, true),
+                                    side: raisedHand
                                   }
                                 })
-                              }
-                            })
+                              })
+                              setStateData({
+                                state: State.CALIBRATE_BOTTOM_CORNER,
+                                data: {
+                                  side: raisedHand,
+                                  yesNo: createYesNo(1000, raisedHand, () => {
+                                    setStateToConfirmHand()
+                                  }, true, false),
+                                  dotPlacer: dotPlacer
+                                }
+                              })
+                              cleanupFns.push(() => cleanupDotPlacer(dotPlacer))
+                            }
+                            setStateToCalibrateBottomCorner()
                           } else {
                             setStateData({
                               state: State.RAISE_HAND,
@@ -225,13 +264,13 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                             const synth = new Tone.Synth().connect(dist)
                             synth.triggerAttackRelease('C2', '4n')
                           }
-                        })
+                        }, true, true)
                         setStateData({
                           state: State.CONFIRM_HAND,
                           data: data,
                           needsToLowerHand: true
                         })
-                        cleanupFns.push(() => cleanup(data))
+                        cleanupFns.push(() => cleanupYesNo(data))
                       }
                       setStateToConfirmHand()
                     }, 1000)
@@ -251,24 +290,39 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
               }
             })
           } else if (stateDataRef.current.state === State.CONFIRM_HAND) {
-            tick(stateDataRef.current.data, newData => setStateData({
+            const newData = tickHandYesNo(stateDataRef.current.data, poses[0])
+            setStateData({
               state: State.CONFIRM_HAND,
               data: newData,
               needsToLowerHand: false
-            }), poses[0])
+            })
           }
         }
       } else if (currentState.state === State.CALIBRATE_BOTTOM_CORNER) {
         if (poses.length >= 1) {
           draw(ctx, poses[0], currentState.data.side)
-          tick(currentState.data.yesNo, newData => setStateData({
+          const newYesNoData = tickHandYesNo(currentState.data.yesNo, poses[0])
+          const newDotPlacerData = newYesNoData.raised
+            ? cleanupDotPlacer(currentState.data.dotPlacer)
+            : tickDotPlacer(currentState.data.dotPlacer, poses[0])
+
+          setStateData({
             state: State.CALIBRATE_BOTTOM_CORNER,
             data: {
               ...currentState.data,
-              yesNo: newData
+              yesNo: newYesNoData,
+              dotPlacer: newDotPlacerData
             }
-          }), poses[0])
+          })
         }
+      } else if (currentState.state === State.CONFIRM_BOTTOM_CORNER) {
+        setStateData({
+          state: State.CONFIRM_BOTTOM_CORNER,
+          data: {
+            ...currentState.data,
+            yesNo: tickHandYesNo(currentState.data.yesNo, poses[0])
+          }
+        })
       }
     }))
 
@@ -332,14 +386,13 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
                         <h2>
                           After this message, move ur hand to the
                           bottom {sideNames.get(1 - stateData.data.yesHand)} corner and hold it there
-                          for 1 second
+                          for {stayStillTime / 1000} seconds
                         </h2>
                         <HandYesNo
-                          showYes
-                          showNo
                           data={stateData.data}
                           noNode={<>Raise {sideNames.get(1 - stateData.data.yesHand)} hand to go back to change the calibration hand.</>}
                           yesNode={<>Raise {sideNames.get(stateData.data.yesHand)} hand to continue</>}
+                          yesFrequency='E4'
                         />
                       </>
                     )}
@@ -347,18 +400,45 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
             {stateData.state === State.CALIBRATE_BOTTOM_CORNER && (
               <>
                 <h1>
-                  Move ur {sideNames.get(stateData.data.side)} hand to the
-                  bottom {sideNames.get(1 - stateData.data.side)} corner
+                  {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (Date.now() - stateData.data.dotPlacer.earliestPositionEntry.startTime) / stayStillTime > 0.25
+                    ? (
+                      <>
+                        Keep your hand in place
+                        <YesSound frequency='G4' />
+                      </>)
+                    : (
+                      <>Move ur {sideNames.get(stateData.data.side)} hand to the
+                        bottom {sideNames.get(1 - stateData.data.side)} corner
+                      </>)}
                 </h1>
+                {stateData.data.dotPlacer.earliestPositionEntry !== undefined && (
+                  <>
+                    <ProgressBar
+                      startTime={stateData.data.dotPlacer.earliestPositionEntry.startTime}
+                      totalTime={stayStillTime}
+                      style={{
+                        backgroundColor: 'yellow'
+                      }}
+                    />
+                  </>)}
                 <HandYesNo
-                  showNo
                   data={stateData.data.yesNo}
-                  showYes={false}
                   yesNode={undefined}
                   noNode={undefined}
+                  yesFrequency={NaN}
                 />
               </>
             )}
+            {stateData.state === State.CONFIRM_BOTTOM_CORNER && (
+              <>
+                <h1>Confirm bottom {sideNames.get(1 - stateData.data.side)} corner position</h1>
+                <HandYesNo
+                  data={stateData.data.yesNo}
+                  noNode='Back'
+                  yesNode='Continue'
+                  yesFrequency='B4'
+                />
+              </>)}
           </div>
         </div>
       </div>

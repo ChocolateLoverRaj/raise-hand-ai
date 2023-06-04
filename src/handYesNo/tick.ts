@@ -5,23 +5,25 @@ import handMap from '../handMap'
 import Side from '../raiseHandProgress/Side'
 import resetTimeout from './resetTimeout'
 
-const tick = (data: Data, setData: (newData: Data) => void, pose: Pose): void => {
+const tick = (data: Data, pose: Pose): Data => {
   const faceY = pose.keypoints3D?.[0].y ?? never()
   const raisedHands = new Map([...handMap].map(([side, { wrist }]) => {
     const { y } = pose.keypoints3D?.[wrist] ?? never()
-    return [side, y < faceY]
+    return [side, (side === data.yesHand ? data.canYes : data.canNo) && y < faceY]
   }))
-  const setNotRaised = (): void => {
+  const setNotRaised = (): Data => {
     if (data.raised) {
       resetTimeout(data)
-      setData({
+      return {
         ...data,
         raised: false
-      })
+      }
+    } else {
+      return data
     }
   }
   if ((raisedHands.get(Side.LEFT) ?? never()) && (raisedHands.get(Side.RIGHT) ?? never())) {
-    setNotRaised()
+    return setNotRaised()
   } else {
     const raisedHand = [...raisedHands].find(([, raised]) => raised)?.[0]
     if (raisedHand !== undefined) {
@@ -30,7 +32,7 @@ const tick = (data: Data, setData: (newData: Data) => void, pose: Pose): void =>
         const timeoutId = setTimeout(() => {
           data.onResult(raisedHand === data.yesHand)
         }, data.raiseTime)
-        setData({
+        return {
           ...data,
           raised: true,
           raisedData: {
@@ -38,12 +40,13 @@ const tick = (data: Data, setData: (newData: Data) => void, pose: Pose): void =>
             startTime: Date.now()
           },
           timeoutId
-        })
+        }
       }
     } else {
-      setNotRaised()
+      return setNotRaised()
     }
   }
+  return data
 }
 
 export default tick

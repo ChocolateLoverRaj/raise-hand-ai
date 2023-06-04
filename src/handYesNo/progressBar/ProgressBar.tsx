@@ -11,7 +11,6 @@ const ProgressBar: FC<Props> = ({ style, startTime, totalTime }) => {
       width: '100%'
     }], {
       duration: Math.max(startTime + totalTime - Date.now(), 0),
-      fill: 'forwards',
       delay: startTime - Date.now(),
       easing: 'linear'
     })
