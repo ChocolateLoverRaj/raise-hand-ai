@@ -2,6 +2,7 @@ import Side from './raiseHandProgress/Side'
 
 export interface Hand {
   wrist: number
+  shoulder: number
 }
 
 /**
@@ -10,10 +11,12 @@ export interface Hand {
  */
 const handMap: Map<Side, Hand> = new Map([
   [Side.LEFT, {
-    wrist: 16
+    wrist: 16,
+    shoulder: 12
   }],
   [Side.RIGHT, {
-    wrist: 15
+    wrist: 15,
+    shoulder: 11
   }]
 ])
 

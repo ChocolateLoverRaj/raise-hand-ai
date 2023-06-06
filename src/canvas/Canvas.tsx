@@ -29,6 +29,8 @@ import drawWithPosition from '../dotPlacer/drawWithPosition'
 import drawCalibrationBox from '../drawCalibrationBox/drawCalibrationBox'
 import StateData from './StateData'
 import State from './State'
+import resizeCanvas from './resizeCanvas/resizeCanvas'
+import ResizeCanvasInput from './resizeCanvas/Input'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -45,31 +47,27 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const resizeCanvasInput: ResizeCanvasInput = {
+    canvasRef,
+    containerRef,
+    videoRef
+  }
 
   const [playPromise] = useState(() => new ObservablePromise(async () => {
     const video = videoRef.current ?? never()
-
     video.srcObject = result
-
-    const canvas = canvasRef.current ?? never()
-    const container = containerRef.current ?? never()
-
     await video.play()
 
-    const fit = aspectFit(video.videoWidth, video.videoHeight, container.offsetWidth, container.offsetHeight)
-    ;(canvas.width as any) = fit.width
-    ;(canvas.height as any) = fit.height
+    resizeCanvas(resizeCanvasInput)
   }))
+  useEffect(() => {
+    playPromise.execute()
+  }, [])
 
   useResizeObserver({
     ref: containerRef,
-    onResize: ({ width, height }) => {
-      const video = videoRef.current ?? never()
-      const canvas = canvasRef.current ?? never()
-
-      const fit = aspectFit(video.videoWidth, video.videoHeight, width, height)
-      ;(canvas.width as any) = fit.width
-      ;(canvas.height as any) = fit.height
+    onResize: () => {
+      resizeCanvas(resizeCanvasInput)
     }
   })
 
@@ -83,10 +81,10 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   const stateDataRef = useFreshRef(stateData)
 
   useEffect(() => {
-    if (!(playPromise.wasExecuted || playPromise.isExecuting)) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      playPromise.execute().catch()
-    }
+    // if (!(playPromise.wasExecuted || playPromise.isExecuting)) {
+    //   // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    //   playPromise.execute().catch()
+    // }
     if (!playPromise.wasSuccessful) return
     const video = videoRef.current ?? never()
     const canvas = canvasRef.current ?? never()
