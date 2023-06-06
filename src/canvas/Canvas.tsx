@@ -69,11 +69,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
     const ctx = canvas.getContext('2d') ?? never()
 
-    const imageDataCanvas = document.createElement('canvas')
-    imageDataCanvas.width = video.videoWidth
-    imageDataCanvas.height = video.videoHeight
-    const imageDataCtx = imageDataCanvas.getContext('2d') ?? never()
-
     const cleanupFns: Array<() => void> = []
 
     let raiseHandTimeoutId: any | undefined
@@ -89,7 +84,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
       ctx.scale(scale, scale)
 
       // Calculate poses
-      imageDataCtx.drawImage(video, 0, 0)
       const poses = await detector.estimatePoses(video, { flipHorizontal: true })
 
       // Draw the image
