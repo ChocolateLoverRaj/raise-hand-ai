@@ -31,6 +31,7 @@ import StateData from './StateData'
 import State from './State'
 import resizeCanvas from './resizeCanvas/resizeCanvas'
 import ResizeCanvasInput from './resizeCanvas/Input'
+import usePlayPromise from './usePlayPromise/usePlayPromise'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -42,8 +43,6 @@ const stayStillTime = 2000
 const stayStillRadius = 20
 
 const Canvas = observer<CanvasProps>(({ detector }) => {
-  const { result } = useContext(VideoContext)
-
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -53,17 +52,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     videoRef
   }
 
-  const [playPromise] = useState(() => new ObservablePromise(async () => {
-    const video = videoRef.current ?? never()
-    video.srcObject = result
-    await video.play()
-
-    resizeCanvas(resizeCanvasInput)
-  }))
-  useEffect(() => {
-    playPromise.execute()
-  }, [])
-
+  const playPromise = usePlayPromise(resizeCanvasInput)
   useResizeObserver({
     ref: containerRef,
     onResize: () => {
