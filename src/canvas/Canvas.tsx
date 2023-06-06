@@ -1,11 +1,8 @@
 import { observer } from 'mobx-react-lite'
-import { MutableRefObject, useContext, useEffect, useRef, useState } from 'react'
-import VideoContext from '../VideoContext'
+import { MutableRefObject, useEffect, useRef, useState } from 'react'
 import never from 'never'
 import repeatedAnimationFrame from '../repeatedAnimationFrame'
-import { ObservablePromise } from 'mobx-observable-promise'
 import { PoseDetector } from '@tensorflow-models/pose-detection'
-import useResizeObserver from 'use-resize-observer'
 import aspectFit from 'aspect-fit'
 import handMap from '../handMap'
 import Side from '../raiseHandProgress/Side'
@@ -29,9 +26,7 @@ import drawWithPosition from '../dotPlacer/drawWithPosition'
 import drawCalibrationBox from '../drawCalibrationBox/drawCalibrationBox'
 import StateData from './StateData'
 import State from './State'
-import resizeCanvas from './resizeCanvas/resizeCanvas'
-import ResizeCanvasInput from './resizeCanvas/Input'
-import usePlayPromise from './usePlayPromise/usePlayPromise'
+import usePlayPromiseAndAutoResizeCanvas from './usePlayPromiseAndAutoResizeCanvas/usePlayPromiseAndAutoResizeCanvas'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -46,18 +41,11 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const resizeCanvasInput: ResizeCanvasInput = {
+
+  const playPromise = usePlayPromiseAndAutoResizeCanvas({
     canvasRef,
     containerRef,
     videoRef
-  }
-
-  const playPromise = usePlayPromise(resizeCanvasInput)
-  useResizeObserver({
-    ref: containerRef,
-    onResize: () => {
-      resizeCanvas(resizeCanvasInput)
-    }
   })
 
   const [stateData, setStateData] = useState<StateData>({

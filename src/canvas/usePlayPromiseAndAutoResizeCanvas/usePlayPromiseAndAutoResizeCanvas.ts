@@ -4,8 +4,9 @@ import { useContext, useEffect, useState } from 'react'
 import resizeCanvas from '../resizeCanvas/resizeCanvas'
 import VideoContext from '../../VideoContext'
 import Input from './Input'
+import useResizeObserver from 'use-resize-observer'
 
-const usePlayPromise = (resizeCanvasInput: Input): ObservablePromise<() => Promise<void>> => {
+const usePlayPromiseAndAutoResizeCanvas = (resizeCanvasInput: Input): ObservablePromise<() => Promise<void>> => {
   const { result } = useContext(VideoContext)
   const [playPromise] = useState(() => new ObservablePromise(async () => {
     const video = resizeCanvasInput.videoRef.current ?? never()
@@ -17,7 +18,13 @@ const usePlayPromise = (resizeCanvasInput: Input): ObservablePromise<() => Promi
   useEffect(() => {
     playPromise.execute()
   }, [])
+  useResizeObserver({
+    ref: resizeCanvasInput.containerRef,
+    onResize: () => {
+      resizeCanvas(resizeCanvasInput)
+    }
+  })
   return playPromise
 }
 
-export default usePlayPromise
+export default usePlayPromiseAndAutoResizeCanvas
