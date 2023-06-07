@@ -1,3 +1,4 @@
+import { stayStillTime } from '../../config'
 import DotPlacerData from '../../dotPlacer/Data'
 import cleanupDotPlacer from '../../dotPlacer/cleanup'
 import drawWithPose from '../../dotPlacer/drawWithPose'
@@ -12,8 +13,6 @@ import Side from '../../raiseHandProgress/Side'
 import sideNames from '../../sideNames'
 import SceneFns from '../SceneFns'
 
-const stayStillTime = 2000
-// FIXME: ignore hand when it's outside the view of the camera
 const calibrateBottomCornerFns: SceneFns<{
   side: Side
   yesNo: YesNoData

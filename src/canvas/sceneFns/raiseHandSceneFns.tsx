@@ -7,6 +7,7 @@ import createYesNo from '../../handYesNo/create'
 import createDotPlacer from '../../dotPlacer/create'
 import RaiseHandProgress from '../../raiseHandProgress/RaiseHandProgress'
 import Scene from '../Scene'
+import { raiseHandTime, stayStillRadius, stayStillTime } from '../../config'
 
 interface RaisedHand {
   startTime: number
@@ -30,10 +31,6 @@ const clearRaiseHandTimeout = (data: Data): Data => {
     raiseHandTimeout: undefined
   }
 }
-
-const raiseHandTime = 1000
-const stayStillTime = 2000
-const stayStillRadius = 20
 
 const raiseHandSceneFns: SceneFns<Data> = {
   tick: ({ data, setScene, pose }) => {

@@ -1,12 +1,10 @@
+import { stayStillTime } from '../../config'
 import YesNoData from '../../handYesNo/Data'
 import HandYesNo from '../../handYesNo/HandYesNo'
 import cleanup from '../../handYesNo/cleanup'
 import tick from '../../handYesNo/tick'
 import sideNames from '../../sideNames'
 import SceneFns from '../SceneFns'
-
-// TODO: This should use the same setting as the other files
-const stayStillTime = 2000
 
 const confirmHandSceneFns: SceneFns<YesNoData> = {
   tick: ({ data, pose }) => {
