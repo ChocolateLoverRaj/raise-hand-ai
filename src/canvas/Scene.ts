@@ -1,8 +1,8 @@
-enum State {
+enum Scene {
   RAISE_HAND,
   CONFIRM_HAND,
   CALIBRATE_BOTTOM_CORNER,
   CONFIRM_BOTTOM_CORNER
 }
 
-export default State
+export default Scene

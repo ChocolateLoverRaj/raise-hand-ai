@@ -2,7 +2,7 @@ import Side from '../raiseHandProgress/Side'
 import YesNoData from '../handYesNo/Data'
 import Position from '../dotPlacer/Position'
 import DotPlacerData from '../dotPlacer/Data'
-import State from './State'
+import Scene from './Scene'
 
 interface RaisedHand {
   startTime: number
@@ -20,20 +20,20 @@ interface BaseStateData {
   needsToLowerHand: boolean
 }
 type StateData = BaseStateData & ({
-  state: State.RAISE_HAND
+  state: Scene.RAISE_HAND
   data: RaisedHands
 } | {
-  state: State.CONFIRM_HAND
+  state: Scene.CONFIRM_HAND
   data: YesNoData
 } | {
-  state: State.CALIBRATE_BOTTOM_CORNER
+  state: Scene.CALIBRATE_BOTTOM_CORNER
   data: {
     side: Side
     yesNo: YesNoData
     dotPlacer: DotPlacerData
   }
 } | {
-  state: State.CONFIRM_BOTTOM_CORNER
+  state: Scene.CONFIRM_BOTTOM_CORNER
   data: {
     side: Side
     bottomCornerPosition: Position

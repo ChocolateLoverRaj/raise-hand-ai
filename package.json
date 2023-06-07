@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@mediapipe/pose": "~0.5.1675469404",
+    "@pelevesque/is-point-in": "^0.1.4",
     "@tensorflow-models/pose-detection": "^2.1.0",
     "@tensorflow/tfjs-backend-webgl": "^4.6.0",
     "@tensorflow/tfjs-converter": "^4.6.0",
@@ -57,6 +58,7 @@
     "react-head": "^3.4.0",
     "react-icons": "^4.9.0",
     "react-use-effect-async": "^1.0.2",
+    "react-usestateref": "^1.0.8",
     "rooks": "^7.14.1",
     "smallest-enclosing-circle": "^1.0.2",
     "style-loader": "^3.3.3",
