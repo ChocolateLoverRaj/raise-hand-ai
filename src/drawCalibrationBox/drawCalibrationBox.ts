@@ -1,9 +1,23 @@
+import never from 'never'
 import Position from '../dotPlacer/Position'
 import drawArrow from '../dotPlacer/drawArrow/drawArrow'
+import handMap from '../handMap'
 import Side from '../raiseHandProgress/Side'
 import Input from './Input'
 
-const drawCalibrationBox = ({ ctx, bottomPoint, topPoint, bottomPointSide }: Input): void => {
+const drawCalibrationBox = ({
+  ctx,
+  bottomPointRelativePos,
+  topPointRelativePos,
+  bottomPointSide,
+  pose
+}: Input): void => {
+  const shoulderPoint = pose.keypoints[(handMap.get(bottomPointSide) ?? never()).shoulder]
+  const bottomPoint: Position = {
+    x: shoulderPoint.x + bottomPointRelativePos.x,
+    y: shoulderPoint.y + bottomPointRelativePos.y
+  }
+
   const pointRadius = 7.5
   ctx.beginPath()
   ctx.moveTo(bottomPoint.x, bottomPoint.y)
@@ -12,7 +26,7 @@ const drawCalibrationBox = ({ ctx, bottomPoint, topPoint, bottomPointSide }: Inp
   ctx.fill()
 
   // TODO: lines and top point
-  if (topPoint === undefined) {
+  if (topPointRelativePos === undefined) {
     const rayLength = 50
     ctx.lineWidth = 3
     ctx.strokeStyle = 'white'

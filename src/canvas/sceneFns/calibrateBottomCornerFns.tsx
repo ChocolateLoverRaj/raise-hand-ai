@@ -1,7 +1,7 @@
 import { stayStillTime } from '../../config'
 import DotPlacerData from '../../dotPlacer/Data'
 import cleanupDotPlacer from '../../dotPlacer/cleanup'
-import drawWithPose from '../../dotPlacer/drawWithPose'
+import drawWithPose from '../../dotPlacer/drawWithPose/drawWithPose'
 import tickDotPlacer from '../../dotPlacer/tick/tick'
 import YesNoData from '../../handYesNo/Data'
 import HandYesNo from '../../handYesNo/HandYesNo'
@@ -20,7 +20,11 @@ const calibrateBottomCornerFns: SceneFns<{
 }> = {
   tick: ({ data, pose, ctx, unscaledSize }) => {
     if (pose !== undefined) {
-      drawWithPose(ctx, pose, data.side)
+      drawWithPose({
+        ctx,
+        pose,
+        side: data.side
+      })
       const newYesNoData = tickHandYesNo(data.yesNo, pose)
       const newDotPlacerData = newYesNoData.raised
         ? cleanupDotPlacer(data.dotPlacer)

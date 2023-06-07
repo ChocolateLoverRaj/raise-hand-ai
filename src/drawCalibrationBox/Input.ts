@@ -1,11 +1,13 @@
+import { Pose } from '@tensorflow-models/pose-detection'
 import Position from '../dotPlacer/Position'
 import Side from '../raiseHandProgress/Side'
 
 interface Input {
   ctx: CanvasRenderingContext2D
-  bottomPoint: Position
+  pose: Pose
+  bottomPointRelativePos: Position
   bottomPointSide: Side
-  topPoint: Position | undefined
+  topPointRelativePos: Position | undefined
 }
 
 export default Input

@@ -61,7 +61,7 @@ const raiseHandSceneFns: SceneFns<Data> = {
                     const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
                       synth.triggerAttackRelease('A4', '4n')
                       setScene(Scene.CONFIRM_BOTTOM_CORNER, {
-                        bottomCornerPosition: position,
+                        bottomCornerRelativePosition: position,
                         yesNo: createYesNo(1000, raisedHand, yes => {
                           if (yes) {
                             synth.triggerAttackRelease('C5', '4n')

@@ -16,6 +16,7 @@ const drawPoses = (ctx: CanvasRenderingContext2D, minScore: number, poses: Pose[
       const pointA = pose.keypoints[a]
       const pointB = pose.keypoints[b]
 
+      ctx.setLineDash([])
       ctx.lineWidth = 2
       ctx.strokeStyle = colorBetween('#ff0000', '#00ff00', ((pointA.score ?? 1) + (pointB.score ?? 1)) / 2, 'hex')
       ctx.beginPath()

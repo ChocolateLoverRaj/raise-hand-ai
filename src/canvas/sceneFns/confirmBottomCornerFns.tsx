@@ -1,5 +1,5 @@
 import Position from '../../dotPlacer/Position'
-import drawWithPosition from '../../dotPlacer/drawWithPosition'
+import drawAfterPlace from '../../dotPlacer/drawAfterPlace/drawAfterPlace'
 import drawCalibrationBox from '../../drawCalibrationBox/drawCalibrationBox'
 import YesNoData from '../../handYesNo/Data'
 import HandYesNo from '../../handYesNo/HandYesNo'
@@ -11,18 +11,24 @@ import SceneFns from '../SceneFns'
 
 const confirmBottomCornerFns: SceneFns<{
   side: Side
-  bottomCornerPosition: Position
+  bottomCornerRelativePosition: Position
   yesNo: YesNoData
 }> = {
   tick: ({ data, pose, ctx }) => {
-    drawCalibrationBox({
-      ctx,
-      bottomPoint: data.bottomCornerPosition,
-      topPoint: undefined,
-      bottomPointSide: data.side
-    })
-    drawWithPosition(ctx, data.bottomCornerPosition)
     if (pose !== undefined) {
+      drawCalibrationBox({
+        ctx,
+        bottomPointRelativePos: data.bottomCornerRelativePosition,
+        topPointRelativePos: undefined,
+        bottomPointSide: data.side,
+        pose
+      })
+      drawAfterPlace({
+        ctx,
+        relativePosition: data.bottomCornerRelativePosition,
+        pose,
+        side: data.side
+      })
       return {
         ...data,
         yesNo: tickHandYesNo(data.yesNo, pose)

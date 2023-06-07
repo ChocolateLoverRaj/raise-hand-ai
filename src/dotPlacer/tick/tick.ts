@@ -7,13 +7,21 @@ import isPointIn from '@pelevesque/is-point-in'
 import cleanup from '../cleanup'
 
 const tick = ({ data, pose, unscaledSize }: Input): Data => {
-  const { x, y } = pose.keypoints[(handMap.get(data.side) ?? never()).wrist]
-  if (!isPointIn.rectangle(x, y, 0, 0, unscaledSize.width, unscaledSize.height)) {
+  const { shoulder, wrist } = handMap.get(data.side) ?? never()
+  const shoulderPoint = pose.keypoints[shoulder]
+  const wristPoint = pose.keypoints[wrist]
+  if (
+    !isPointIn.rectangle(shoulderPoint.x, shoulderPoint.y, 0, 0, unscaledSize.width, unscaledSize.height) ||
+    !isPointIn.rectangle(wristPoint.x, wristPoint.y, 0, 0, unscaledSize.width, unscaledSize.height)
+  ) {
     return cleanup(data)
   }
+  const relativeX = wristPoint.x - shoulderPoint.x
+  const relativeY = wristPoint.y - shoulderPoint.y
+
   const newPositionEntries = [...data.positionEntries, {
     time: Date.now(),
-    position: { x, y }
+    position: { x: relativeX, y: relativeY }
   }]
   // const circle = smallestEnclosingCircle(newPositionEntries.map(({ position }) => position))
   let shouldCancelTimeout = false
