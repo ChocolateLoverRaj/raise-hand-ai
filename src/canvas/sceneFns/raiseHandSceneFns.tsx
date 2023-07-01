@@ -10,6 +10,7 @@ import Scene from '../Scene'
 import { raiseHandTime, stayStillRadius, stayStillTime } from '../../config'
 import cleanupDotPlacer from '../../dotPlacer/cleanup'
 import cleanupYesNo from '../../handYesNo/cleanup'
+import Heading from '../Heading'
 
 interface RaisedHand {
   startTime: number
@@ -86,7 +87,8 @@ const raiseHandSceneFns: SceneFns<Data> = {
                               setStateToCalibrateBottomCorner()
                             }
                           }, true, true),
-                          side: raisedHand
+                          side: raisedHand,
+                          pos: undefined
                         })
                       }
                       setSceneToConfirmBottomCorner()
@@ -130,7 +132,7 @@ const raiseHandSceneFns: SceneFns<Data> = {
     }
   },
   render: data => (
-    <>
+    <Heading>
       <h1>
         {new Map<number, string>([
           [0, 'Raise Hand Above Face to Continue'],
@@ -145,7 +147,7 @@ const raiseHandSceneFns: SceneFns<Data> = {
           startTime={data.data.startTime}
           totalTime={raiseHandTime}
         />)}
-    </>),
+    </Heading>),
   cleanup: clearRaiseHandTimeout
 }
 

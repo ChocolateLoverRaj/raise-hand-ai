@@ -11,6 +11,7 @@ import tickHandYesNo from '../../handYesNo/tick'
 import YesSound from '../../handYesNo/yesSound/YesSound'
 import Side from '../../raiseHandProgress/Side'
 import sideNames from '../../sideNames'
+import Heading from '../Heading'
 import SceneFns from '../SceneFns'
 
 const calibrateBottomCornerFns: SceneFns<{
@@ -52,7 +53,7 @@ const calibrateBottomCornerFns: SceneFns<{
     return data
   },
   render: data => (
-    <>
+    <Heading>
       <h1>
         {data.dotPlacer.earliestPositionEntry !== undefined && (Date.now() - data.dotPlacer.earliestPositionEntry.startTime) / stayStillTime > 0.25
           ? (
@@ -81,7 +82,7 @@ const calibrateBottomCornerFns: SceneFns<{
         noNode={undefined}
         yesFrequency={NaN}
       />
-    </>
+    </Heading>
   ),
   cleanup: ({ dotPlacer, yesNo }) => {
     cleanupYesNo(yesNo)

@@ -4,6 +4,7 @@ import HandYesNo from '../../handYesNo/HandYesNo'
 import cleanup from '../../handYesNo/cleanup'
 import tick from '../../handYesNo/tick'
 import sideNames from '../../sideNames'
+import Heading from '../Heading'
 import SceneFns from '../SceneFns'
 
 const confirmHandSceneFns: SceneFns<YesNoData> = {
@@ -14,7 +15,7 @@ const confirmHandSceneFns: SceneFns<YesNoData> = {
     return data
   },
   render: data => (
-    <>
+    <Heading>
       <h1>Calibrate {sideNames.get(data.yesHand)} hand</h1>
       <h2>
         After this message, move ur hand to the
@@ -27,7 +28,7 @@ const confirmHandSceneFns: SceneFns<YesNoData> = {
         yesNode={<>Raise {sideNames.get(data.yesHand)} hand to continue</>}
         yesFrequency='E4'
       />
-    </>
+    </Heading>
   ),
   cleanup: cleanup
 }

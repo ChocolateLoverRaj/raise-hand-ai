@@ -5,8 +5,9 @@ import HandYesNo from '../../handYesNo/HandYesNo'
 import cleanupYesNo from '../../handYesNo/cleanup'
 import tickHandYesNo from '../../handYesNo/tick'
 import sideNames from '../../sideNames'
+import Heading from '../Heading'
 import SceneFns from '../SceneFns'
-import AfterCalibrateBottomCornerData from './afterCalibrateBottomCornerData'
+import AfterCalibrateBottomCornerData from './AfterCalibrateBottomCornerData'
 
 interface ConfirmBottomCornerData extends AfterCalibrateBottomCornerData {
   yesNo: YesNoData
@@ -36,7 +37,7 @@ const confirmBottomCornerFns: SceneFns<ConfirmBottomCornerData> = {
     }
   },
   render: data => (
-    <>
+    <Heading>
       <h1>Confirm bottom {sideNames.get(1 - data.side)} corner position</h1>
       <HandYesNo
         data={data.yesNo}
@@ -44,7 +45,7 @@ const confirmBottomCornerFns: SceneFns<ConfirmBottomCornerData> = {
         yesNode='Continue'
         yesFrequency='B4'
       />
-    </>),
+    </Heading>),
   cleanup: ({ yesNo }) => {
     cleanupYesNo(yesNo)
   }

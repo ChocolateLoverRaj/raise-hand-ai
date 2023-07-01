@@ -11,6 +11,7 @@ import usePlayPromiseAndAutoResizeCanvas from './usePlayPromiseAndAutoResizeCanv
 import sceneMap from './sceneMap'
 import useStateRef from 'react-usestateref'
 import VideoContext from '../VideoContext'
+import Heading from './Heading'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -122,28 +123,13 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
         }}
       >
         <canvas ref={canvasRef} />
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            textAlign: 'center',
-            backgroundColor: 'rgba(0, 255, 0, 0.5)'
-          }}
-        >
-          <div
-            style={{
-              position: 'relative'
-            }}
-          >
-            {stateData.needsToLowerHand
-              ? (
-                <h1>Lower ur hand</h1>
-                )
-              : sceneMap.get(stateData.scene)?.render(stateData.sceneData)}
-          </div>
-        </div>
+        {stateData.needsToLowerHand
+          ? (
+            <Heading>
+              <h1>Lower ur hand</h1>
+            </Heading>
+            )
+          : sceneMap.get(stateData.scene)?.render(stateData.sceneData)}
       </div>
       {playPromise.isExecuting && 'Playing video'}
       {playPromise.isError && 'Error playing video'}
