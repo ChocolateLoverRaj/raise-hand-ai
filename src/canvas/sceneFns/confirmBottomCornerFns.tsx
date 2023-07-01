@@ -1,19 +1,17 @@
-import Position from '../../dotPlacer/Position'
 import drawAfterPlace from '../../dotPlacer/drawAfterPlace/drawAfterPlace'
 import drawCalibrationBox from '../../drawCalibrationBox/drawCalibrationBox'
 import YesNoData from '../../handYesNo/Data'
 import HandYesNo from '../../handYesNo/HandYesNo'
 import cleanupYesNo from '../../handYesNo/cleanup'
 import tickHandYesNo from '../../handYesNo/tick'
-import Side from '../../raiseHandProgress/Side'
 import sideNames from '../../sideNames'
 import SceneFns from '../SceneFns'
+import AfterCalibrateBottomCornerData from './afterCalibrateBottomCornerData'
 
-const confirmBottomCornerFns: SceneFns<{
-  side: Side
-  bottomCornerRelativePosition: Position
+interface ConfirmBottomCornerData extends AfterCalibrateBottomCornerData {
   yesNo: YesNoData
-}> = {
+}
+const confirmBottomCornerFns: SceneFns<ConfirmBottomCornerData> = {
   tick: ({ data, pose, ctx }) => {
     if (pose !== undefined) {
       drawCalibrationBox({

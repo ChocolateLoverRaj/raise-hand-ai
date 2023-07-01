@@ -8,6 +8,8 @@ import createDotPlacer from '../../dotPlacer/create'
 import RaiseHandProgress from '../../raiseHandProgress/RaiseHandProgress'
 import Scene from '../Scene'
 import { raiseHandTime, stayStillRadius, stayStillTime } from '../../config'
+import cleanupDotPlacer from '../../dotPlacer/cleanup'
+import cleanupYesNo from '../../handYesNo/cleanup'
 
 interface RaisedHand {
   startTime: number
@@ -60,18 +62,34 @@ const raiseHandSceneFns: SceneFns<Data> = {
                   const setStateToCalibrateBottomCorner = (): void => {
                     const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
                       synth.triggerAttackRelease('A4', '4n')
-                      setScene(Scene.CONFIRM_BOTTOM_CORNER, {
-                        bottomCornerRelativePosition: position,
-                        yesNo: createYesNo(1000, raisedHand, yes => {
-                          if (yes) {
-                            synth.triggerAttackRelease('C5', '4n')
-                            console.log('calibrate top corner')
-                          } else {
-                            setStateToCalibrateBottomCorner()
-                          }
-                        }, true, true),
-                        side: raisedHand
-                      })
+                      const setSceneToConfirmBottomCorner = (): void => {
+                        setScene(Scene.CONFIRM_BOTTOM_CORNER, {
+                          bottomCornerRelativePosition: position,
+                          yesNo: createYesNo(1000, raisedHand, yes => {
+                            if (yes) {
+                              synth.triggerAttackRelease('C5', '4n')
+                              const yesNo = createYesNo(1000, raisedHand, () => {
+                                cleanupDotPlacer(dotPlacer)
+                                setSceneToConfirmBottomCorner()
+                              }, true, false)
+                              const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
+                                cleanupYesNo(yesNo)
+                                console.log('place', position)
+                              })
+                              setScene(Scene.CALIBRATE_TOP_CORNER, {
+                                side: raisedHand,
+                                bottomCornerRelativePosition: position,
+                                yesNo: yesNo,
+                                dotPlacer: dotPlacer
+                              })
+                            } else {
+                              setStateToCalibrateBottomCorner()
+                            }
+                          }, true, true),
+                          side: raisedHand
+                        })
+                      }
+                      setSceneToConfirmBottomCorner()
                     })
                     setScene(Scene.CALIBRATE_BOTTOM_CORNER, {
                       side: raisedHand,

@@ -31,7 +31,16 @@ const calibrateBottomCornerFns: SceneFns<{
         : tickDotPlacer({
           data: data.dotPlacer,
           pose,
-          unscaledSize
+          boundaryRect: {
+            pos1: {
+              x: 0,
+              y: 0
+            },
+            pos2: {
+              x: unscaledSize.width,
+              y: unscaledSize.height
+            }
+          }
         })
 
       return {

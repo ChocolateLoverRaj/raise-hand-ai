@@ -10,7 +10,14 @@ const CanCamera = observer(() => {
     const observablePromise: VideoPromise = new ObservablePromise(async deviceId => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { deviceId }
+        video: {
+          ...deviceId !== undefined
+            ? { deviceId }
+            : {
+                facingMode: 'user'
+              }
+          // frameRate: 60
+        }
       })
       return mediaStream
     })

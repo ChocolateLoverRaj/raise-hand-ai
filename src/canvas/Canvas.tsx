@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { MutableRefObject, useEffect, useRef } from 'react'
+import { MutableRefObject, useContext, useEffect, useRef } from 'react'
 import never from 'never'
 import repeatedAnimationFrame from '../repeatedAnimationFrame'
 import { PoseDetector } from '@tensorflow-models/pose-detection'
@@ -10,6 +10,7 @@ import Scene from './Scene'
 import usePlayPromiseAndAutoResizeCanvas from './usePlayPromiseAndAutoResizeCanvas/usePlayPromiseAndAutoResizeCanvas'
 import sceneMap from './sceneMap'
 import useStateRef from 'react-usestateref'
+import VideoContext from '../VideoContext'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -107,9 +108,12 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     }
   }, [playPromise.wasSuccessful])
 
+  const { result } = useContext(VideoContext)
+
   return (
     <>
       <video ref={videoRef} hidden />
+      Video FPS: <code>{result.getVideoTracks()[0].getSettings().frameRate}</code>
       <div
         ref={containerRef}
         style={{

@@ -3,19 +3,13 @@ import handMap from '../../handMap'
 import never from 'never'
 import smallestEnclosingCircle from 'smallest-enclosing-circle'
 import Input from './Input'
-import isPointIn from '@pelevesque/is-point-in'
+import pointInPolygon from 'point-in-polygon'
 import cleanup from '../cleanup'
 
-const tick = ({ data, pose, unscaledSize }: Input): Data => {
+const tick = ({ data, pose, boundaryRect }: Input): Data => {
   const { shoulder, wrist } = handMap.get(data.side) ?? never()
   const shoulderPoint = pose.keypoints[shoulder]
   const wristPoint = pose.keypoints[wrist]
-  if (
-    !isPointIn.rectangle(shoulderPoint.x, shoulderPoint.y, 0, 0, unscaledSize.width, unscaledSize.height) ||
-    !isPointIn.rectangle(wristPoint.x, wristPoint.y, 0, 0, unscaledSize.width, unscaledSize.height)
-  ) {
-    return cleanup(data)
-  }
   const relativeX = wristPoint.x - shoulderPoint.x
   const relativeY = wristPoint.y - shoulderPoint.y
 
@@ -23,11 +17,27 @@ const tick = ({ data, pose, unscaledSize }: Input): Data => {
     time: Date.now(),
     position: { x: relativeX, y: relativeY }
   }]
-  // const circle = smallestEnclosingCircle(newPositionEntries.map(({ position }) => position))
   let shouldCancelTimeout = false
-  while (smallestEnclosingCircle(newPositionEntries.map(({ position }) => position)).r > data.maxRadius) {
+  while ((() => {
+    const circle = smallestEnclosingCircle(newPositionEntries.map(({ position }) => position))
+    return (
+      circle.r > data.maxRadius ||
+      !pointInPolygon(
+        [shoulderPoint.x + circle.x, shoulderPoint.y + circle.y],
+        [
+          [boundaryRect.pos1.x, boundaryRect.pos1.y],
+          [boundaryRect.pos1.x, boundaryRect.pos2.y],
+          [boundaryRect.pos2.x, boundaryRect.pos2.y],
+          [boundaryRect.pos2.x, boundaryRect.pos1.y]
+        ]
+      )
+    )
+  })()) {
     if (newPositionEntries.shift() === data.earliestPositionEntry?.positionEntry) {
       shouldCancelTimeout = true
+    }
+    if (newPositionEntries.length === 0) {
+      return cleanup(data)
     }
   }
   let newEarliestPositionEntry = data.earliestPositionEntry
