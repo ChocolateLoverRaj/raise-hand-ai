@@ -11,6 +11,7 @@ import { raiseHandTime, stayStillRadius, stayStillTime } from '../../config'
 import cleanupDotPlacer from '../../dotPlacer/cleanup'
 import cleanupYesNo from '../../handYesNo/cleanup'
 import Heading from '../Heading'
+import setSceneToConfirmTopCorner from './setSceneToConfirmTopCorner/setSceneToConfirmTopCorner'
 
 interface RaisedHand {
   startTime: number
@@ -61,28 +62,38 @@ const raiseHandSceneFns: SceneFns<Data> = {
                 if (yes) {
                   synth.triggerAttackRelease('F4', '4n')
                   const setStateToCalibrateBottomCorner = (): void => {
-                    const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
+                    const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, bottomCornerRelativePosition => {
                       synth.triggerAttackRelease('A4', '4n')
                       const setSceneToConfirmBottomCorner = (): void => {
                         setScene(Scene.CONFIRM_BOTTOM_CORNER, {
-                          bottomCornerRelativePosition: position,
+                          bottomCornerRelativePosition,
                           yesNo: createYesNo(1000, raisedHand, yes => {
                             if (yes) {
                               synth.triggerAttackRelease('C5', '4n')
-                              const yesNo = createYesNo(1000, raisedHand, () => {
-                                cleanupDotPlacer(dotPlacer)
-                                setSceneToConfirmBottomCorner()
-                              }, true, false)
-                              const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, position => {
-                                cleanupYesNo(yesNo)
-                                console.log('place', position)
-                              })
-                              setScene(Scene.CALIBRATE_TOP_CORNER, {
-                                side: raisedHand,
-                                bottomCornerRelativePosition: position,
-                                yesNo: yesNo,
-                                dotPlacer: dotPlacer
-                              })
+                              const setSceneToCalibrateTopCorner = (): void => {
+                                const yesNo = createYesNo(1000, raisedHand, () => {
+                                  cleanupDotPlacer(dotPlacer)
+                                  setSceneToConfirmBottomCorner()
+                                }, true, false)
+                                const dotPlacer = createDotPlacer(stayStillRadius, raisedHand, stayStillTime, topCornerRelativePosition => {
+                                  synth.triggerAttackRelease('E5', '4n')
+                                  cleanupYesNo(yesNo)
+                                  setSceneToConfirmTopCorner({
+                                    setScene,
+                                    bottomCornerRelativePosition,
+                                    goBack: setSceneToCalibrateTopCorner,
+                                    raisedHand,
+                                    topCornerRelativePosition
+                                  })
+                                })
+                                setScene(Scene.CALIBRATE_TOP_CORNER, {
+                                  side: raisedHand,
+                                  bottomCornerRelativePosition,
+                                  yesNo: yesNo,
+                                  dotPlacer: dotPlacer
+                                })
+                              }
+                              setSceneToCalibrateTopCorner()
                             } else {
                               setStateToCalibrateBottomCorner()
                             }

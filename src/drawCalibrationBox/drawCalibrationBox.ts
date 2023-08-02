@@ -18,12 +18,12 @@ const drawCalibrationBox = ({
     y: shoulderPoint.y + bottomPointRelativePos.y
   }
 
-  const pointRadius = 7.5
-  ctx.beginPath()
-  ctx.moveTo(bottomPoint.x, bottomPoint.y)
-  ctx.arc(bottomPoint.x, bottomPoint.y, pointRadius, 0, 2 * Math.PI)
-  ctx.fillStyle = 'white'
-  ctx.fill()
+  // const pointRadius = 7.5
+  // ctx.beginPath()
+  // ctx.moveTo(bottomPoint.x, bottomPoint.y)
+  // ctx.arc(bottomPoint.x, bottomPoint.y, pointRadius, 0, 2 * Math.PI)
+  // ctx.fillStyle = 'white'
+  // ctx.fill()
 
   // TODO: lines and top point
   if (topPointRelativePos === undefined) {

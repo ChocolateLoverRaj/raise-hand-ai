@@ -18,7 +18,8 @@ const CameraSuccess: FC = () => {
       <div
         ref={containerRef}
         style={{
-          flexGrow: 1
+          flexGrow: 1,
+          height: '100%'
         }}
       >
         <Detector containerRef={containerRef} />

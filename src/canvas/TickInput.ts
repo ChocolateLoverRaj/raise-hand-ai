@@ -1,9 +1,10 @@
 import { Pose } from '@tensorflow-models/pose-detection'
 import Size from '../dotPlacer/tick/Size'
+import SetScene from './SetScene'
 
 interface TickInput<T> {
   data: T
-  setScene: (scene: any, sceneData: any) => void
+  setScene: SetScene
   pose: Pose | undefined
   ctx: CanvasRenderingContext2D
   unscaledSize: Size

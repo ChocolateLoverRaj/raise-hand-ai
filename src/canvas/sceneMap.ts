@@ -4,6 +4,7 @@ import calibrateBottomCornerFns from './sceneFns/calibrateBottomCornerFns'
 import calibrateTopCornerFns from './sceneFns/calibrateTopCornerFns'
 import confirmBottomCornerFns from './sceneFns/confirmBottomCornerFns'
 import confirmHandSceneFns from './sceneFns/confirmHandSceneFns'
+import confirmTopCornerFns from './sceneFns/confirmTopCornerFns'
 import raiseHandSceneFns from './sceneFns/raiseHandSceneFns'
 
 const sceneMap = new Map<Scene, SceneFns<any>>([
@@ -11,7 +12,8 @@ const sceneMap = new Map<Scene, SceneFns<any>>([
   [Scene.CONFIRM_HAND, confirmHandSceneFns],
   [Scene.CALIBRATE_BOTTOM_CORNER, calibrateBottomCornerFns],
   [Scene.CONFIRM_BOTTOM_CORNER, confirmBottomCornerFns],
-  [Scene.CALIBRATE_TOP_CORNER, calibrateTopCornerFns]
+  [Scene.CALIBRATE_TOP_CORNER, calibrateTopCornerFns],
+  [Scene.CONFIRM_TOP_CORNER, confirmTopCornerFns]
 ])
 
 export default sceneMap

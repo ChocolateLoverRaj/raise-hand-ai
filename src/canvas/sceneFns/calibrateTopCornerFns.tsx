@@ -109,7 +109,7 @@ const calibrateTopCornerFns: SceneFns<CalibrateTopCornerData> = {
             ? (
               <>
                 Keep your hand in place
-                <YesSound frequency='G4' />
+                <YesSound frequency='D5' />
               </>)
             : (
               <>Move ur {sideNames.get(side)} hand to the
