@@ -17,7 +17,7 @@ const config: Configuration = {
         plugins: [
           'react-require',
           ...mode === 'development'
-            ? [require.resolve('react-refresh/babel')]
+            ? [/* require.resolve('react-refresh/babel') */]
             : []
         ],
         presets: ['@babel/preset-react', '@babel/preset-typescript']
@@ -44,7 +44,7 @@ const config: Configuration = {
       process: 'process/browser'
     }),
     ...mode === 'development'
-      ? [new ReactRefreshWebpackPlugin()]
+      ? [/* new ReactRefreshWebpackPlugin() */]
       : []
   ],
   devServer: {

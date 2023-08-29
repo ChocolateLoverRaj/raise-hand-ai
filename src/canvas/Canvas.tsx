@@ -5,13 +5,10 @@ import repeatedAnimationFrame from '../repeatedAnimationFrame'
 import { PoseDetector } from '@tensorflow-models/pose-detection'
 import aspectFit from 'aspect-fit'
 import drawPoses from '../drawPoses'
-import areHandsAboveHead from '../areHandsAboveHead'
-import Scene from './Scene'
 import usePlayPromiseAndAutoResizeCanvas from './usePlayPromiseAndAutoResizeCanvas/usePlayPromiseAndAutoResizeCanvas'
-import sceneMap from './sceneMap'
-import useStateRef from 'react-usestateref'
 import VideoContext from '../VideoContext'
-import Heading from './Heading'
+import Size from '../dotPlacer/tick/Size'
+import Position from '../dotPlacer/Position'
 
 export interface CanvasProps {
   detector: PoseDetector
@@ -27,19 +24,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     canvasRef,
     containerRef,
     videoRef
-  })
-
-  const [stateData, setStateData, stateDataRef] = useStateRef<{
-    needsToLowerHand: boolean
-    scene: Scene
-    sceneData: any
-  }>({
-    scene: Scene.RAISE_HAND,
-    sceneData: {
-      raiseHandTimeout: undefined,
-      count: 0
-    },
-    needsToLowerHand: false
   })
 
   useEffect(() => {
@@ -69,43 +53,63 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
 
       drawPoses(ctx, 0.5, poses)
 
-      const currentState = stateDataRef.current
-
-      if (currentState.needsToLowerHand) {
-        if (!areHandsAboveHead(poses[0])) {
-          setStateData({
-            ...currentState,
-            needsToLowerHand: false
-          })
-        }
-      } else {
-        const sceneFns = sceneMap.get(currentState.scene) ?? never()
-        const newSceneData = sceneFns.tick({
-          data: currentState.sceneData,
-          setScene: (scene, sceneData) => {
-            setStateData({
-              needsToLowerHand: true,
-              scene,
-              sceneData
-            })
-          },
-          pose: poses[0],
-          ctx,
-          unscaledSize: {
-            width: video.videoWidth,
-            height: video.videoHeight
-          }
-        })
-        setStateData({
-          ...currentState,
-          sceneData: newSceneData
-        })
+      const shoulder = poses[0].keypoints[11]
+      const elbow = poses[0].keypoints[13]
+      const wrist = poses[0].keypoints[15]
+      const aspectRatio: Size = {
+        width: 3,
+        height: 2
       }
+
+      const radius =
+        ((elbow.x - shoulder.x) ** 2 + (elbow.y - shoulder.y) ** 2) ** 0.5 +
+        ((wrist.x - elbow.x) ** 2 + (wrist.y - elbow.y) ** 2) ** 0.5
+
+      const diagonal = (aspectRatio.width ** 2 + aspectRatio.height ** 2) ** 0.5
+      const diagonalScale = radius / diagonal
+
+      ctx.beginPath()
+      ctx.arc(shoulder.x, shoulder.y, radius, 0, Math.PI * 2)
+      ctx.strokeStyle = 'purple'
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.arc(wrist.x, wrist.y, 10, 0, Math.PI * 2)
+      ctx.fillStyle = 'red'
+      ctx.fill()
+
+      const leftX = shoulder.x - aspectRatio.width * diagonalScale
+      const rightX = shoulder.x + aspectRatio.width * diagonalScale
+      const topY = shoulder.y - aspectRatio.height * diagonalScale
+      const bottomY = shoulder.y + aspectRatio.height * diagonalScale
+
+      const getNormalizedWristPos = (): Position => {
+        let x = wrist.x
+        let y = wrist.y
+        x = Math.max(x, leftX)
+        y = Math.max(y, topY)
+        x = Math.min(x, rightX)
+        y = Math.min(y, bottomY)
+        return { x, y }
+      }
+      const { x: normalizedX, y: normalizedY } = getNormalizedWristPos()
+
+      ctx.beginPath()
+      ctx.arc(normalizedX, normalizedY, 10, 0, Math.PI * 2)
+      ctx.fillStyle = 'pink'
+      ctx.fill()
+
+      ctx.strokeStyle = 'blue'
+      ctx.strokeRect(
+        shoulder.x - aspectRatio.width * diagonalScale,
+        shoulder.y - aspectRatio.height * diagonalScale,
+        aspectRatio.width * diagonalScale * 2,
+        aspectRatio.height * diagonalScale * 2
+      )
     })
 
     return () => {
       cancelRaf()
-      sceneMap.get(stateDataRef.current.scene)?.cleanup(stateDataRef.current.sceneData)
     }
   }, [playPromise.wasSuccessful])
 
@@ -123,13 +127,6 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
         }}
       >
         <canvas ref={canvasRef} />
-        {stateData.needsToLowerHand
-          ? (
-            <Heading>
-              <h1>Lower ur hand</h1>
-            </Heading>
-            )
-          : sceneMap.get(stateData.scene)?.render(stateData.sceneData)}
       </div>
       {playPromise.isExecuting && 'Playing video'}
       {playPromise.isError && 'Error playing video'}
