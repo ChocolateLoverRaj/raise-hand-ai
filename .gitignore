@@ -107,3 +107,9 @@ dist
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# Rust and WASM stuff
+/dist
+/target
+/pkg
+/wasm-pack.log
