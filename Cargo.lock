@@ -217,9 +217,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-react"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89a68ec3aaa94c4c19d24c447e9afaaee54a958d56cac4e8c32bd0ae0efeab43"
+checksum = "8a780c707d43e664b3a7963e0f12dfcdcab15384c746ed1b526fdc5e2dcb187b"
 dependencies = [
  "js-sys",
  "paste",
