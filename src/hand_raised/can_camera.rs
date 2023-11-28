@@ -29,19 +29,19 @@ impl Component for CanCamera {
             clones!(mut resolved);
             use_effect(
                 move || {
-                    resolved.set(|mut _resolved| PromiseState::Pending);
-                    let video_object = Object::new();
-                    Reflect::set(&video_object, &"facingMode".into(), &"user".into()).unwrap();
-                    let js_promise = window()
-                        .unwrap()
-                        .navigator()
-                        .media_devices()
-                        .unwrap()
-                        .get_user_media_with_constraints(
-                            &MediaStreamConstraints::new().video(&video_object),
-                        )
-                        .unwrap();
                     spawn_local(async move {
+                        resolved.set(|mut _resolved| PromiseState::Pending);
+                        let video_object = Object::new();
+                        Reflect::set(&video_object, &"facingMode".into(), &"user".into()).unwrap();
+                        let js_promise = window()
+                            .unwrap()
+                            .navigator()
+                            .media_devices()
+                            .unwrap()
+                            .get_user_media_with_constraints(
+                                &MediaStreamConstraints::new().video(&video_object),
+                            )
+                            .unwrap();
                         let result = JsFuture::from(js_promise).await;
                         match result {
                             Ok(ref v) => log_1(&v),
