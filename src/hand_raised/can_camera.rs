@@ -1,8 +1,9 @@
 use js_sys::{Object, Reflect};
-use wasm_bindgen::{closure::Closure, JsValue};
+use wasm_bindgen::JsValue;
+use wasm_bindgen_futures::{spawn_local, JsFuture};
 use wasm_react::{
     clones, h,
-    hooks::{use_effect, use_ref, use_state, Deps},
+    hooks::{use_effect, use_state, Deps},
     Component, VNode,
 };
 use web_sys::{console::log_1, window, MediaStreamConstraints};
@@ -15,11 +16,6 @@ impl CanCamera {
     }
 }
 
-struct Magic {
-    closure_resolved: Closure<dyn FnMut(JsValue)>,
-    closure_rejected: Closure<dyn FnMut(JsValue)>,
-}
-
 pub enum PromiseState {
     NotStarted,
     Pending,
@@ -29,19 +25,6 @@ pub enum PromiseState {
 impl Component for CanCamera {
     fn render(&self) -> VNode {
         let resolved = use_state(|| PromiseState::NotStarted);
-        let magic_ref = use_ref({
-            let mut resolved_0 = resolved.clone();
-            let mut resolved_1 = resolved.clone();
-            Magic {
-                closure_resolved: Closure::new(move |v| {
-                    log_1(&v);
-                    resolved_0.set(|mut _resolved| PromiseState::Done(Ok(v)));
-                }),
-                closure_rejected: Closure::new(move |v| {
-                    resolved_1.set(|mut _resolved| PromiseState::Done(Err(v)));
-                }),
-            }
-        });
         {
             clones!(mut resolved);
             use_effect(
@@ -58,10 +41,14 @@ impl Component for CanCamera {
                             &MediaStreamConstraints::new().video(&video_object),
                         )
                         .unwrap();
-                    drop(js_promise.then2(
-                        &magic_ref.current().closure_resolved,
-                        &magic_ref.current().closure_rejected,
-                    ));
+                    spawn_local(async move {
+                        let result = JsFuture::from(js_promise).await;
+                        match result {
+                            Ok(ref v) => log_1(&v),
+                            Err(ref v) => log_1(&v),
+                        }
+                        resolved.set(|_resolved| PromiseState::Done(result));
+                    });
                 },
                 Deps::none(),
             );
