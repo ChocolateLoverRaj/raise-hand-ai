@@ -1,4 +1,3 @@
-use wasm_bindgen::JsValue;
 use wasm_react::{Component, VNode};
 mod can_camera;
 
