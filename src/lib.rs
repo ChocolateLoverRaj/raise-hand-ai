@@ -2,7 +2,10 @@ use hand_raised::HandRaised;
 use wasm_bindgen::JsValue;
 use wasm_react::{export_components, import_components, Component, VNode};
 mod hand_raised;
+mod use_promise;
 use wasm_bindgen::prelude::*;
+mod device_id_context;
+mod use_future;
 
 import_components! {
     #[wasm_bindgen(module = "react-head")]

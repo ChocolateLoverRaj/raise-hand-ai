@@ -36,6 +36,8 @@ console_error_panic_hook = "0.1.5"
 wasm-react = "0.6"
 wasm-bindgen-futures = "0.4.38"
 js-sys = "0.3.65"
+serde-wasm-bindgen = "0.6.1"
+serde = "1.0.193"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
@@ -47,6 +49,7 @@ features = [
   "MediaDevices",
   "Window",
   "MediaStreamConstraints",
+  "EventTarget",
 ]
 
 # These crates are used for running unit tests.

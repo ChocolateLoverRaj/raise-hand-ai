@@ -3,6 +3,7 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 use wasm_react::hooks::{use_effect, use_state, Deps, State};
 
+#[derive(Clone)]
 pub enum PromiseState {
     NotStarted,
     Pending,
