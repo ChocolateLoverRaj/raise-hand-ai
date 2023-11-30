@@ -1,9 +1,9 @@
 use crate::{
     device_id_context::DEVICE_ID_CONTEXT,
+    media_device_info::MediaDeviceInfo,
     use_promise::{use_promise, PromiseState},
 };
-use js_sys::Reflect;
-use serde::{Deserialize, Serialize};
+use js_sys::{Array, Reflect};
 use std::ops::Deref;
 use wasm_react::{
     clones, h,
@@ -48,15 +48,12 @@ impl Component for ChooseCamera {
                 .build(h!(option).value("only").build("Getting list of cameras")),
             PromiseState::Done(result) => match result {
                 Ok(devices) => {
-                    #[derive(Serialize, Deserialize)]
-                    #[serde(rename_all = "camelCase")]
-                    struct MediaDeviceInfo {
-                        device_id: String,
-                        kind: String,
-                        label: String,
-                    }
-                    let devices: Vec<MediaDeviceInfo> =
-                        serde_wasm_bindgen::from_value(devices.clone()).unwrap();
+                    let devices = Array::try_from(devices.clone())
+                        .unwrap()
+                        .to_vec()
+                        .iter()
+                        .map(|device| MediaDeviceInfo::from(device.clone()))
+                        .collect::<Vec<_>>();
                     h!(select)
                         .value(device_id)
                         .on_change(&Callback::<Event>::new({

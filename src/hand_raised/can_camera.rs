@@ -1,12 +1,11 @@
 use crate::{
     device_id_context::{VideoPromiseAndId, DEVICE_ID_CONTEXT},
     hand_raised::can_camera::camera_success::CameraSuccess,
+    media_stream::MediaStream,
     use_future::{use_future, FutureState},
 };
 
-use js_sys::{Array, Object, Reflect};
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsCast;
+use js_sys::{Object, Reflect};
 use wasm_bindgen_futures::JsFuture;
 use wasm_react::{
     clones,
@@ -56,34 +55,8 @@ impl Component for CanCamera {
                     JsFuture::from(js_promise).await;
                 match result {
                     Ok(media_stream) => {
-                        let get_video_tracks =
-                            Reflect::get(&media_stream, &"getVideoTracks".into()).unwrap();
-                        let video_tracks_js_value = Array::try_from(
-                            Reflect::apply(
-                                &get_video_tracks.dyn_ref().unwrap(),
-                                &media_stream,
-                                &Array::new(),
-                            )
-                            .unwrap(),
-                        )
-                        .unwrap();
-                        let video_track = video_tracks_js_value.get(0);
-                        let get_settings =
-                            Reflect::get(&video_track, &"getSettings".into()).unwrap();
-                        #[derive(Serialize, Deserialize)]
-                        #[serde(rename_all = "camelCase")]
-                        struct Settings {
-                            device_id: String,
-                        }
-                        let settings_js_value = Reflect::apply(
-                            &get_settings.dyn_ref().unwrap(),
-                            &video_track,
-                            &Array::new(),
-                        )
-                        .unwrap();
-                        let settings =
-                            serde_wasm_bindgen::from_value::<Settings>(settings_js_value).unwrap();
-                        Ok(settings.device_id)
+                        let media_stream = MediaStream::from(media_stream);
+                        Ok(media_stream.get_video_tracks()[0].get_settings().device_id)
                     }
                     Err(e) => Err(e),
                 }
