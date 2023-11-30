@@ -20,10 +20,8 @@ impl MediaStream {
         )
         .unwrap()
         .to_vec()
-        .iter()
-        .map(|media_stream_track_js_value| {
-            MediaStreamTrack::from(media_stream_track_js_value.to_owned())
-        })
+        .into_iter()
+        .map(|media_stream_track_js_value| MediaStreamTrack::from(media_stream_track_js_value))
         .collect()
     }
 }
