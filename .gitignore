@@ -113,3 +113,6 @@ pnpm-lock.yaml
 /target
 /pkg
 /wasm-pack.log
+
+# Webpack
+/public

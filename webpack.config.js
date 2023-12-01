@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const dist = path.resolve(__dirname, "dist");
 
 module.exports = {
-  mode: "development",
+  mode: process.env.NODE_ENV = 'production' ? 'production' : 'development',
   experiments: {
     asyncWebAssembly: true,
   },
@@ -17,9 +17,6 @@ module.exports = {
     path: dist,
     filename: "[name].js",
   },
-  devServer: {
-    static: dist,
-  },
   plugins: [
     new HtmlWebpackPlugin({
       template: "index.html"
@@ -27,6 +24,12 @@ module.exports = {
     new WasmPackPlugin({
       crateDirectory: __dirname,
     }),
+    new CopyPlugin({
+      patterns: [{
+        from: "node_modules/@mediapipe/pose",
+        to: "_node_modules/@mediapipe/pose"
+      }]
+    })
   ],
   resolve: {
     extensions: ['.js', '.jsx']
