@@ -5,8 +5,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 const dist = path.resolve(__dirname, "dist");
 
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+
 module.exports = {
-  mode: process.env.NODE_ENV = 'production' ? 'production' : 'development',
+  mode,
   experiments: {
     asyncWebAssembly: true,
   },
@@ -46,6 +48,10 @@ module.exports = {
           }
         }
       },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader']
+      }
     ]
   },
 };

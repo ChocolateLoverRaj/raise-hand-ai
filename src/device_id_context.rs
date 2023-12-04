@@ -1,7 +1,8 @@
 use wasm_react::{create_context, hooks::State, Context};
+use web_sys::MediaStream;
 
 pub struct VideoPromiseAndId {
-    pub video_promise: Option<String>,
+    pub video_promise: Option<MediaStream>,
     pub device_id: State<Option<String>>,
 }
 

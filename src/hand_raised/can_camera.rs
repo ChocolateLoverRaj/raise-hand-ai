@@ -1,18 +1,18 @@
 use crate::{
     device_id_context::{VideoPromiseAndId, DEVICE_ID_CONTEXT},
     hand_raised::can_camera::camera_success::CameraSuccess,
-    media_stream::MediaStream,
     use_future::{use_future, FutureState},
 };
 
 use js_sys::{Object, Reflect};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use wasm_react::{
     clones,
     hooks::{use_state, Deps},
     Component, ContextProvider, VNode,
 };
-use web_sys::{console::log_1, window, MediaStreamConstraints};
+use web_sys::{console::log_1, window, MediaStream, MediaStreamConstraints};
 mod camera_success;
 
 pub struct CanCamera {}
@@ -55,8 +55,8 @@ impl Component for CanCamera {
                     JsFuture::from(js_promise).await;
                 match result {
                     Ok(media_stream) => {
-                        let media_stream = MediaStream::from(media_stream);
-                        Ok(media_stream.get_video_tracks()[0].get_settings().device_id)
+                        let media_stream: MediaStream = media_stream.dyn_into().unwrap();
+                        Ok(media_stream)
                     }
                     Err(e) => Err(e),
                 }

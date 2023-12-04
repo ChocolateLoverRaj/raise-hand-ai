@@ -1,8 +1,5 @@
 use wasm_bindgen::JsValue;
-use wasm_react::{
-    hooks::{Deps, JsRefContainer},
-    Component, VNode,
-};
+use wasm_react::{hooks::Deps, Component, VNode};
 use wasm_tensorflow_models_pose_detection::{
     create_detector,
     model::{
@@ -10,13 +7,14 @@ use wasm_tensorflow_models_pose_detection::{
     },
 };
 use wasm_tensorflow_tfjs_core::{set_backend, BackendName};
-use web_sys::{console::error_1, Element};
+use web_sys::console::error_1;
 
 use crate::use_future::{use_future, FutureState};
 
-pub struct Detector {
-    pub container_ref: JsRefContainer<Element>,
-}
+use self::canvas::Canvas;
+mod canvas;
+
+pub struct Detector;
 
 impl Component for Detector {
     fn render(&self) -> VNode {
@@ -39,17 +37,16 @@ impl Component for Detector {
         );
 
         let v_node = match detector.value().clone() {
-            FutureState::NotStarted => "Will set up detector",
-            FutureState::Pending => "Setting up detector",
+            FutureState::NotStarted => "Will set up detector".into(),
+            FutureState::Pending => "Setting up detector".into(),
             FutureState::Done(result) => match result {
-                Ok(_) => "C",
+                Ok(detector) => Canvas { detector }.build(),
                 Err(e) => {
                     error_1(&e);
-                    "Error setting up detector"
+                    "Error setting up detector".into()
                 }
             },
-        }
-        .into();
+        };
         v_node
     }
 }

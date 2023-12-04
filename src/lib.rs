@@ -5,9 +5,8 @@ mod hand_raised;
 use wasm_bindgen::prelude::*;
 mod device_id_context;
 mod media_device_info;
-mod media_stream;
-mod media_stream_track;
 mod use_future;
+mod use_resize_observer;
 
 import_components! {
     #[wasm_bindgen(module = "react-head")]

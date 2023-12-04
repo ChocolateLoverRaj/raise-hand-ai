@@ -5,13 +5,14 @@ use crate::{
 };
 use js_sys::{Array, Reflect};
 use std::ops::Deref;
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use wasm_react::{
     clones, h,
     hooks::{use_context, Deps},
     Callback, Component, VNode,
 };
-use web_sys::{window, Event};
+use web_sys::{window, Event, MediaStreamTrack};
 
 pub struct ChooseCamera;
 
@@ -48,7 +49,7 @@ impl Component for ChooseCamera {
             Deps::none(),
         );
         let context = use_context(&DEVICE_ID_CONTEXT);
-        let device_id = match context.as_ref() {
+        let media_stream = match context.as_ref() {
             Some(video_promise_and_id) => video_promise_and_id.video_promise.clone(),
             None => None,
         };
@@ -61,7 +62,20 @@ impl Component for ChooseCamera {
                 .build(h!(option).value("only").build("Getting list of cameras")),
             FutureState::Done(result) => match result {
                 Ok(devices) => h!(select)
-                    .value(device_id)
+                    .value({
+                        let video_track: MediaStreamTrack = media_stream
+                            .unwrap()
+                            .get_video_tracks()
+                            .get(0)
+                            .dyn_into()
+                            .unwrap();
+                        let settings = video_track.get_settings();
+                        let device_id = Reflect::get(&settings, &"deviceId".into())
+                            .unwrap()
+                            .as_string()
+                            .unwrap();
+                        device_id
+                    })
                     .on_change(&Callback::<Event>::new({
                         move |event| {
                             if let Some(device_id) = context.as_ref() {
