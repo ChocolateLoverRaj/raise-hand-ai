@@ -1,13 +1,15 @@
+use js_sys::Reflect;
+use wasm_bindgen::JsCast;
 use wasm_react::{
     create_element, h,
-    hooks::use_js_ref,
+    hooks::{use_context, use_js_ref},
     props::{Props, Style},
     Component, VNode,
 };
 use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
-use web_sys::{HtmlCanvasElement, HtmlDivElement, HtmlVideoElement};
+use web_sys::{HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack};
 
-use crate::use_future::FutureState;
+use crate::{device_id_context::DEVICE_ID_CONTEXT, use_future::FutureState};
 
 use self::{
     resize_canvas_input::ResizeCanvasInput,
@@ -53,6 +55,15 @@ impl Component for Canvas {
             video_ref: video_ref.clone(),
         });
 
+        let video_context = use_context(&DEVICE_ID_CONTEXT);
+        let media_stream = video_context
+            .as_ref()
+            .as_ref()
+            .unwrap()
+            .video_promise
+            .as_ref()
+            .unwrap();
+
         create_element(
             &"div".into(),
             &Props::new()
@@ -76,8 +87,23 @@ impl Component for Canvas {
                         .insert("hidden", &true.into()),
                     ().into(),
                 ),
-                VNode::from("Video FPS: "),
-                h!(code).build("FPS here"),
+                h!(span).build((
+                    VNode::from("Video FPS: "),
+                    h!(code).build(
+                        Reflect::get(
+                            &media_stream
+                                .get_video_tracks()
+                                .get(0)
+                                .unchecked_into::<MediaStreamTrack>()
+                                .get_settings(),
+                            &"frameRate".into(),
+                        )
+                        .unwrap()
+                        .as_f64()
+                        .unwrap()
+                        .to_string(),
+                    ),
+                )),
                 create_element(
                     &"div".into(),
                     &Props::new()
