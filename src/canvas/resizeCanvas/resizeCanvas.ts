@@ -8,8 +8,8 @@ const resizeCanvas = ({ canvasRef, containerRef, videoRef }: Input): void => {
   const container = containerRef.current ?? never()
 
   const fit = aspectFit(video.videoWidth, video.videoHeight, container.offsetWidth, container.offsetHeight)
-      ;(canvas.width) = fit.width
-  ;(canvas.height) = fit.height
+  canvas.width = fit.width
+  canvas.height = fit.height
 }
 
 export default resizeCanvas
