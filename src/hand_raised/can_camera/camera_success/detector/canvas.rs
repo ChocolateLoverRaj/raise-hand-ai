@@ -73,6 +73,7 @@ impl Component for Canvas {
                                 log_1(&"break loop".into());
                                 break;
                             };
+
                             detector_frame(&video, &canvas, &container, &pointer_canvas, &detector)
                                 .await;
                             fps.set(|_| Some(fps_counter.tick() as f64));

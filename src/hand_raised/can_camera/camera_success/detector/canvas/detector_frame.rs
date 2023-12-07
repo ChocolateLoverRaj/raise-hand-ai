@@ -1,40 +1,9 @@
 use aspect_fit::{aspect_fit::aspect_fit, size::Size};
-use js_sys::{Array, Promise, Reflect};
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::{convert::OptionIntoWasmAbi, JsCast, JsValue};
+use js_sys::{Array, Reflect};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
-use web_sys::{
-    console::{error_2, log_1, log_2, log_3},
-    CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
-};
-
-#[wasm_bindgen(module = "/js/main.js")]
-extern "C" {
-    #[wasm_bindgen(js_name = createDetector)]
-    fn create_detector() -> Promise;
-    #[wasm_bindgen(js_name = estimatePoses)]
-    fn estimate_poses(detector: &JsValue, video: &JsValue) -> Promise;
-
-}
-
-struct Config {
-    pub show_threshold_line: bool,
-    pub show_key_points: bool,
-    pub show_reach_circle: bool,
-    pub show_reach_box: bool,
-    pub show_wrist_point: bool,
-    pub show_pointer_on_screen: bool,
-}
-
-static CONFIG: Config = Config {
-    show_threshold_line: false,
-    show_key_points: true,
-    show_reach_box: false,
-    show_reach_circle: false,
-    show_wrist_point: false,
-    show_pointer_on_screen: true,
-};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement};
 
 pub async fn detector_frame(
     video: &HtmlVideoElement,
@@ -68,27 +37,16 @@ pub async fn detector_frame(
     ctx.reset_transform().unwrap();
     ctx.scale(scale, scale).unwrap();
 
-    // let js: JsValue = detector.into();
-    // let estimate_poses = Reflect::get(&js, &"estimatePoses".into()).unwrap();
-    // let r = Reflect::apply(
-    //     &estimate_poses.dyn_into().unwrap(),
-    //     &js,
-    //     &Array::from_iter(vec![video].iter()),
-    // )
-    // .unwrap();
-    // let poses = detector.estimate_poses(&video.into(), None).await.unwrap();
-    let detector = JsFuture::from(create_detector()).await.unwrap();
-    let poses = JsFuture::from(estimate_poses(&detector, &video.into()))
+    // VERY IMPORTANT: estimating poses before the video plays results in the error
+    // RuntimeError: Aborted(native code called abort(). To avoid this error, just await video.play().
+    JsFuture::from(video.play().unwrap()).await.unwrap();
+    // let poses = JsFuture::from(estimate_poses()).await.unwrap();
+    let poses = detector
+        .estimate_poses(&video.dyn_ref().unwrap(), None)
         .await
         .unwrap();
-    log_3(
-        &detector.into(),
-        &JsValue::undefined(),
-        &Array::from_iter(vec![video].iter()),
-    );
 
-    // panic!()
-    log_2(&"frame".into(), &poses.into());
+    // log_1(&format!("{:#?}", poses).into());
 
     let transform_before = Reflect::apply(
         &Reflect::get(&ctx, &"getTransform".into())

@@ -1,3 +1,5 @@
+use self::canvas::Canvas;
+use crate::use_future::{use_future, FutureState};
 use wasm_bindgen::JsValue;
 use wasm_react::{hooks::Deps, Component, VNode};
 use wasm_tensorflow_models_pose_detection::{
@@ -9,9 +11,6 @@ use wasm_tensorflow_models_pose_detection::{
 use wasm_tensorflow_tfjs_core::{set_backend, BackendName};
 use web_sys::console::error_1;
 
-use crate::use_future::{use_future, FutureState};
-
-use self::canvas::Canvas;
 mod canvas;
 
 pub struct Detector;
