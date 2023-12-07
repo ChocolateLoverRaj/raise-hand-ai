@@ -11,16 +11,18 @@ pub fn resize_canvas(input: &ResizeCanvasInput) {
         width: video.video_width(),
         height: video.video_height(),
     };
-    let fit = scale_size(
-        &aspect_fit::<f64, u32>(
+    if video_scale.width > 0 && video_scale.height > 0 {
+        let fit = scale_size(
+            &aspect_fit::<f64, u32>(
+                &video_scale,
+                &Size {
+                    width: container.offset_width() as u32,
+                    height: container.offset_height() as u32,
+                },
+            ),
             &video_scale,
-            &Size {
-                width: container.offset_width() as u32,
-                height: container.offset_height() as u32,
-            },
-        ),
-        &video_scale,
-    );
-    canvas.set_width(fit.width);
-    canvas.set_height(fit.height);
+        );
+        canvas.set_width(fit.width);
+        canvas.set_height(fit.height);
+    }
 }

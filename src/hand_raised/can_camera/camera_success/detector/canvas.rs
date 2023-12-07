@@ -1,20 +1,27 @@
 use js_sys::Reflect;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen_futures::spawn_local;
 use wasm_react::{
     create_element, h,
-    hooks::{use_context, use_js_ref},
+    hooks::{use_context, use_effect, use_js_ref, Deps},
     props::{Props, Style},
     Component, VNode,
 };
+use wasm_repeated_animation_frame::RafLoop;
 use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
-use web_sys::{HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack};
+use web_sys::{
+    console::{log_1, log_2},
+    window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
+    MediaStream, MediaStreamTrack,
+};
 
 use crate::{device_id_context::DEVICE_ID_CONTEXT, use_future::FutureState};
 
 use self::{
-    resize_canvas_input::ResizeCanvasInput,
+    detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
     use_play_promise_and_auto_resize_canvas::use_play_promise_and_auto_resize_canvas,
 };
+mod detector_frame;
 mod resize_canvas;
 mod resize_canvas_input;
 mod use_play_promise_and_auto_resize_canvas;
@@ -56,13 +63,53 @@ impl Component for Canvas {
         });
 
         let video_context = use_context(&DEVICE_ID_CONTEXT);
-        let media_stream = video_context
-            .as_ref()
-            .as_ref()
-            .unwrap()
-            .video_promise
-            .as_ref()
-            .unwrap();
+
+        let media_stream_promise = &video_context.as_ref().as_ref().unwrap().video_promise;
+        let media_stream = media_stream_promise.as_ref().unwrap();
+
+        use_effect(
+            {
+                let video_context = video_context.clone();
+                let video_ref = video_ref.clone();
+                let canvas_ref = canvas_ref.clone();
+                let container_ref = container_ref.clone();
+                let pointer_canvas_ref = pointer_canvas_ref.clone();
+                let detector = self.detector.clone();
+
+                move || {
+                    let video = video_ref.current().unwrap();
+                    let canvas = canvas_ref.current().unwrap();
+                    let container = container_ref.current().unwrap();
+                    let pointer_canvas = pointer_canvas_ref.current().unwrap();
+
+                    let (mut raf_loop, canceler) = RafLoop::new();
+                    spawn_local(async move {
+                        // let mut fps_counter = FPSCounter::new();
+                        loop {
+                            if !raf_loop.next().await {
+                                log_1(&"break loop".into());
+                                break;
+                            };
+                            detector_frame(&video, &canvas, &container, &pointer_canvas, &detector)
+                                .await;
+                            // if !raf_loop.next().await {
+                            //     log_1(&"break loop".into());
+                            //     break;
+                            // };
+                            // fps.set(|_| fps_counter.tick());
+                        }
+                    });
+                    move || {
+                        spawn_local(async move {
+                            canceler.cancel().await;
+                            log_1(&"stopped raf loop".into());
+                        });
+                        log_1(&"stop raf loop".into());
+                    }
+                }
+            },
+            Deps::none(),
+        );
 
         create_element(
             &"div".into(),
@@ -144,6 +191,7 @@ impl Component for Canvas {
                             .height("100vh")
                             .left(0)
                             .top(0)
+                            .pointer_events("none")
                             .into(),
                     ),
                     ().into(),

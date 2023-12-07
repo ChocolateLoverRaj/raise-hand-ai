@@ -24,6 +24,7 @@ impl TryFrom<JsValue> for App {
     type Error = JsValue;
 
     fn try_from(_: JsValue) -> Result<Self, Self::Error> {
+        console_error_panic_hook::set_once();
         Ok(App)
     }
 }
