@@ -30,15 +30,15 @@ wasm-bindgen = "0.2.45"
 # allocator, so it's not enabled by default.
 wee_alloc = { version = "0.4.2", optional = true }
 console_error_panic_hook = "0.1.5"
-wasm-react = { path = "../wasm-react" }
 wasm-bindgen-futures = "0.4.38"
 js-sys = "0.3.65"
 serde-wasm-bindgen = "0.6.1"
 serde = "1.0.193"
-wasm-tensorflow-tfjs-core = { path = "../wasm-tensorflow-tfjs-core" }
-wasm-tensorflow-models-pose-detection = { path = "../wasm-tensorflow-models-pose-detection/" }
-wasm-repeated-animation-frame = { path = "../wasm-repeated-animation-frame/" }
 aspect-fit = "0.1.0"
+wasm-repeated-animation-frame = "0.1.1"
+wasm-tensorflow-models-pose-detection = "0.1.0"
+wasm-tensorflow-tfjs-core = "0.1.1"
+wasm-react = "0.6.0"
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]

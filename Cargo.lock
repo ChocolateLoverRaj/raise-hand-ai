@@ -575,6 +575,8 @@ dependencies = [
 [[package]]
 name = "wasm-react"
 version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a780c707d43e664b3a7963e0f12dfcdcab15384c746ed1b526fdc5e2dcb187b"
 dependencies = [
  "js-sys",
  "paste",
@@ -585,6 +587,8 @@ dependencies = [
 [[package]]
 name = "wasm-repeated-animation-frame"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da603acd1c6ec45f21cf2abc8972bc6a60e27600e9f35c47b79ad27a060599a9"
 dependencies = [
  "async-channel",
  "futures",
@@ -598,18 +602,21 @@ dependencies = [
 [[package]]
 name = "wasm-tensorflow-models-pose-detection"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4ede2e0d528c3301901aee00b6ff4bb95c670c78c15682d763b5f65db35e29d"
 dependencies = [
  "serde",
  "serde-wasm-bindgen",
  "strum_macros",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
 name = "wasm-tensorflow-tfjs-core"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c51ccf46b7d65ea575b9cb925730bccc9b019ba06f60a92f48c9f17dff3d438"
 dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
