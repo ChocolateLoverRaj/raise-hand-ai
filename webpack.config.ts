@@ -3,6 +3,7 @@ import { Configuration, ProvidePlugin } from 'webpack'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 import 'webpack-dev-server'
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin'
+import CopyPlugin from "copy-webpack-plugin"
 
 const mode: Configuration['mode'] = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
@@ -42,6 +43,12 @@ const config: Configuration = {
     }),
     new ProvidePlugin({
       process: 'process/browser'
+    }),
+    new CopyPlugin({
+      patterns: [{
+        from: "node_modules/@mediapipe/pose",
+        to: "_node_modules/@mediapipe/pose"
+      }]
     }),
     ...mode === 'development'
       ? [/* new ReactRefreshWebpackPlugin() */]

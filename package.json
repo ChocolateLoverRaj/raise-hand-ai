@@ -4,8 +4,7 @@
   "scripts": {
     "start": "webpack serve",
     "lint": "eslint .",
-    "build": "webpack && cp-cli node_modules/@mediapipe/pose/ dist",
-    "postinstall": "symlink-dir node_modules/@mediapipe/pose public"
+    "build": "webpack"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
@@ -48,6 +47,7 @@
     "@tensorflow/tfjs-core": "4.6.0",
     "aspect-fit": "^1.0.2",
     "color-between": "^1.0.2",
+    "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "mobx": "^6.3.12",
     "mobx-localstorage": "^1.2.0",

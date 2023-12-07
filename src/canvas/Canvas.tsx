@@ -54,7 +54,7 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
     const pointerCanvas = pointerCanvasRef.current ?? never()
 
     const ctx = canvas.getContext('2d') ?? never()
-    const pointerCtx = (pointerCanvas).getContext('2d') ?? never()
+    const pointerCtx = pointerCanvas.getContext('2d') ?? never()
 
     const cancelRaf = repeatedAnimationFrame(async () => {
       const { scale } = aspectFit(video.videoWidth, video.videoHeight, container.offsetWidth, container.offsetHeight)
@@ -118,8 +118,8 @@ const Canvas = observer<CanvasProps>(({ detector }) => {
           }
 
           const radius =
-          ((elbow.x - shoulder.x) ** 2 + (elbow.y - shoulder.y) ** 2) ** 0.5 +
-          ((wrist.x - elbow.x) ** 2 + (wrist.y - elbow.y) ** 2) ** 0.5
+            ((elbow.x - shoulder.x) ** 2 + (elbow.y - shoulder.y) ** 2) ** 0.5 +
+            ((wrist.x - elbow.x) ** 2 + (wrist.y - elbow.y) ** 2) ** 0.5
 
           const diagonal = (aspectRatio.width ** 2 + aspectRatio.height ** 2) ** 0.5
           const diagonalScale = radius / diagonal

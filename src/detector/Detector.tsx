@@ -15,7 +15,7 @@ const Detector = observer<Props>(({ containerRef }) => {
         enableSmoothing: true,
         modelType: 'lite',
         runtime: 'mediapipe',
-        solutionPath: './'
+        solutionPath: './_node_modules/@mediapipe/pose'
       })
       return detector
     })
