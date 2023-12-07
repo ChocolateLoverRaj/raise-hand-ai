@@ -98,6 +98,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fps_counter"
+version = "2.0.0"
+source = "git+https://github.com/ChocolateLoverRaj/fps_counter/?branch=wasm#9c6e19b35af69b1c5173d348e75def132963ed84"
+dependencies = [
+ "instant",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -191,6 +199,18 @@ name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+
+[[package]]
+name = "instant"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
+dependencies = [
+ "cfg-if 1.0.0",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
+]
 
 [[package]]
 name = "js-sys"
@@ -364,6 +384,7 @@ version = "0.1.0"
 dependencies = [
  "aspect-fit",
  "console_error_panic_hook",
+ "fps_counter",
  "js-sys",
  "serde",
  "serde-wasm-bindgen",

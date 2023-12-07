@@ -63,6 +63,11 @@ features = [
   "CanvasRenderingContext2d",
 ]
 
+[dependencies.fps_counter]
+git = "https://github.com/ChocolateLoverRaj/fps_counter/"
+branch = "wasm"
+features = ["wasm-bindgen"]
+
 # These crates are used for running unit tests.
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

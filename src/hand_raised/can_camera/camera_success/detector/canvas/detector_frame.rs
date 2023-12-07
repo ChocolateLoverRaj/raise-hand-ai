@@ -18,6 +18,24 @@ extern "C" {
 
 }
 
+struct Config {
+    pub show_threshold_line: bool,
+    pub show_key_points: bool,
+    pub show_reach_circle: bool,
+    pub show_reach_box: bool,
+    pub show_wrist_point: bool,
+    pub show_pointer_on_screen: bool,
+}
+
+static CONFIG: Config = Config {
+    show_threshold_line: false,
+    show_key_points: true,
+    show_reach_box: false,
+    show_reach_circle: false,
+    show_wrist_point: false,
+    show_pointer_on_screen: true,
+};
+
 pub async fn detector_frame(
     video: &HtmlVideoElement,
     canvas: &HtmlCanvasElement,

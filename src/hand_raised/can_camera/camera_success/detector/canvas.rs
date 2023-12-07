@@ -1,18 +1,17 @@
+use fps_counter::FPSCounter;
 use js_sys::Reflect;
-use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_react::{
     create_element, h,
-    hooks::{use_context, use_effect, use_js_ref, Deps},
+    hooks::{use_context, use_effect, use_js_ref, use_state, Deps},
     props::{Props, Style},
     Component, VNode,
 };
 use wasm_repeated_animation_frame::RafLoop;
 use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
 use web_sys::{
-    console::{log_1, log_2},
-    window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
-    MediaStream, MediaStreamTrack,
+    console::log_1, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack,
 };
 
 use crate::{device_id_context::DEVICE_ID_CONTEXT, use_future::FutureState};
@@ -25,24 +24,6 @@ mod detector_frame;
 mod resize_canvas;
 mod resize_canvas_input;
 mod use_play_promise_and_auto_resize_canvas;
-
-struct Config {
-    pub show_threshold_line: bool,
-    pub show_key_points: bool,
-    pub show_reach_circle: bool,
-    pub show_reach_box: bool,
-    pub show_wrist_point: bool,
-    pub show_pointer_on_screen: bool,
-}
-
-static CONFIG: Config = Config {
-    show_threshold_line: false,
-    show_key_points: true,
-    show_reach_box: false,
-    show_reach_circle: false,
-    show_wrist_point: false,
-    show_pointer_on_screen: true,
-};
 
 pub struct Canvas {
     pub detector: PoseDetector,
@@ -67,14 +48,16 @@ impl Component for Canvas {
         let media_stream_promise = &video_context.as_ref().as_ref().unwrap().video_promise;
         let media_stream = media_stream_promise.as_ref().unwrap();
 
+        let fps = use_state(|| None::<f64>);
+
         use_effect(
             {
-                let video_context = video_context.clone();
                 let video_ref = video_ref.clone();
                 let canvas_ref = canvas_ref.clone();
                 let container_ref = container_ref.clone();
                 let pointer_canvas_ref = pointer_canvas_ref.clone();
                 let detector = self.detector.clone();
+                let mut fps = fps.clone();
 
                 move || {
                     let video = video_ref.current().unwrap();
@@ -84,7 +67,7 @@ impl Component for Canvas {
 
                     let (mut raf_loop, canceler) = RafLoop::new();
                     spawn_local(async move {
-                        // let mut fps_counter = FPSCounter::new();
+                        let mut fps_counter = FPSCounter::new();
                         loop {
                             if !raf_loop.next().await {
                                 log_1(&"break loop".into());
@@ -92,11 +75,7 @@ impl Component for Canvas {
                             };
                             detector_frame(&video, &canvas, &container, &pointer_canvas, &detector)
                                 .await;
-                            // if !raf_loop.next().await {
-                            //     log_1(&"break loop".into());
-                            //     break;
-                            // };
-                            // fps.set(|_| fps_counter.tick());
+                            fps.set(|_| Some(fps_counter.tick() as f64));
                         }
                     });
                     move || {
@@ -110,6 +89,8 @@ impl Component for Canvas {
             },
             Deps::none(),
         );
+
+        let fps = *fps.value();
 
         create_element(
             &"div".into(),
@@ -134,22 +115,34 @@ impl Component for Canvas {
                         .insert("hidden", &true.into()),
                     ().into(),
                 ),
-                h!(span).build((
-                    VNode::from("Video FPS: "),
-                    h!(code).build(
-                        Reflect::get(
-                            &media_stream
-                                .get_video_tracks()
-                                .get(0)
-                                .unchecked_into::<MediaStreamTrack>()
-                                .get_settings(),
-                            &"frameRate".into(),
-                        )
-                        .unwrap()
-                        .as_f64()
-                        .unwrap()
-                        .to_string(),
-                    ),
+                h!(div).style(&Style::new().display("flex")).build((
+                    h!(span).style(&Style::new().flex_grow(1)).build((
+                        VNode::from("Video FPS: "),
+                        h!(code).build(
+                            Reflect::get(
+                                &media_stream
+                                    .get_video_tracks()
+                                    .get(0)
+                                    .unchecked_into::<MediaStreamTrack>()
+                                    .get_settings(),
+                                &"frameRate".into(),
+                            )
+                            .unwrap()
+                            .as_f64()
+                            .unwrap()
+                            .to_string(),
+                        ),
+                    )),
+                    h!(span).style(&Style::new().flex_grow(1)).build((
+                        VNode::from("Pose detection FPS: "),
+                        h!(code).build({
+                            let v_node: VNode = match fps {
+                                Some(fps) => fps.into(),
+                                None => "Not started".into(),
+                            };
+                            v_node
+                        }),
+                    )),
                 )),
                 create_element(
                     &"div".into(),
