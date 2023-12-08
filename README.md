@@ -6,5 +6,6 @@ https://ChocolateLoverRaj.github.io/raise-hand-ai
 
 ## Developing
 - Install [Node.js](https://nodejs.org)
+- Install [Rust](https://www.rust-lang.org/)
 - Install packages using `npm i`
 - Run `npm start`
