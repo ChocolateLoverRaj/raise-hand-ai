@@ -660,6 +660,8 @@ dependencies = [
 [[package]]
 name = "wasm-tensorflow-models-pose-detection"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "344070a1d78a04b7321336be902afe0643a47d681c5a87d6375f17d31a16fec8"
 dependencies = [
  "serde",
  "serde-wasm-bindgen",
