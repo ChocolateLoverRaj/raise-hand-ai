@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 mod device_id_context;
 mod draw_poses;
 mod media_device_info;
+mod side_map;
 mod use_future;
 mod use_resize_observer;
 

@@ -428,6 +428,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "real_float"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dee308ef52b7603c018d9a0c2ff03fe65fb064bb8605a8c7ac99fb2dfb7542f"
+
+[[package]]
 name = "rust-webpack-template"
 version = "0.1.0"
 dependencies = [
@@ -437,6 +443,7 @@ dependencies = [
  "console_error_panic_hook",
  "fps_counter",
  "js-sys",
+ "real_float",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",

@@ -41,6 +41,8 @@ wasm-tensorflow-tfjs-core = "0.1.1"
 wasm-react = "0.6.0"
 coloriz = "0.2.0"
 average = "0.14.1"
+real_float = "0.3.0"
+
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]
