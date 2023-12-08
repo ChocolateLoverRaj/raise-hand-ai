@@ -22,15 +22,13 @@ interface Config {
   showKeyPoints: boolean
   showReachCircle: boolean
   showReachBox: boolean
-  showWristPoint: boolean
   showPointerOnScreen: boolean
 }
 const config: Config = {
   showThresholdLine: false,
   showKeyPoints: true,
-  showReachBox: false,
-  showReachCircle: false,
-  showWristPoint: false,
+  showReachBox: true,
+  showReachCircle: true,
   showPointerOnScreen: true
 }
 
