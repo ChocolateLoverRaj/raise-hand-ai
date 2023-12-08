@@ -36,9 +36,11 @@ serde-wasm-bindgen = "0.6.1"
 serde = "1.0.193"
 aspect-fit = "0.1.0"
 wasm-repeated-animation-frame = "0.1.1"
-wasm-tensorflow-models-pose-detection = "0.1.0"
+wasm-tensorflow-models-pose-detection = { path = "../wasm-tensorflow-models-pose-detection" }
 wasm-tensorflow-tfjs-core = "0.1.1"
 wasm-react = "0.6.0"
+coloriz = "0.2.0"
+average = "0.14.1"
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]
@@ -64,8 +66,7 @@ features = [
 ]
 
 [dependencies.fps_counter]
-git = "https://github.com/ChocolateLoverRaj/fps_counter/"
-branch = "wasm"
+version = "3.0.0"
 features = ["wasm-bindgen"]
 
 # These crates are used for running unit tests.

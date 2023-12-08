@@ -5,7 +5,8 @@ use wasm_react::{hooks::Deps, Component, VNode};
 use wasm_tensorflow_models_pose_detection::{
     create_detector,
     model::{
-        BlazePoseMediaPipeModelConfig, BlazePoseModelConfig, BlazePoseModelType, Model, Runtime,
+        BlazePoseMediaPipeModelConfig, BlazePoseModelConfig, BlazePoseModelType, ModelWithConfig,
+        Runtime,
     },
 };
 use wasm_tensorflow_tfjs_core::{set_backend, BackendName};
@@ -20,16 +21,17 @@ impl Component for Detector {
         let detector = use_future(
             move || async move {
                 set_backend(BackendName::Webgl).await?;
-                let detector = create_detector(Model::BlazePose(Some(BlazePoseModelConfig {
-                    runtime: Runtime::Mediapipe(BlazePoseMediaPipeModelConfig {
-                        solution_path: Some("./_node_modules/@mediapipe/pose".into()),
-                    }),
-                    enable_smoothing: Some(true),
-                    model_type: Some(BlazePoseModelType::Lite),
-                    enable_segmentation: None,
-                    smooth_segmentation: None,
-                })))
-                .await?;
+                let detector =
+                    create_detector(ModelWithConfig::BlazePose(Some(BlazePoseModelConfig {
+                        runtime: Runtime::Mediapipe(BlazePoseMediaPipeModelConfig {
+                            solution_path: Some("./_node_modules/@mediapipe/pose".into()),
+                        }),
+                        enable_smoothing: Some(true),
+                        model_type: Some(BlazePoseModelType::Lite),
+                        enable_segmentation: None,
+                        smooth_segmentation: None,
+                    })))
+                    .await?;
                 Ok::<_, JsValue>(detector)
             },
             Deps::none(),

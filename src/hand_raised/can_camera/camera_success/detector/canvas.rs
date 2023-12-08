@@ -54,7 +54,7 @@ impl Component for Canvas {
             {
                 let video_ref = video_ref.clone();
                 let canvas_ref = canvas_ref.clone();
-                let container_ref = container_ref.clone();
+                let canvas_container_ref = canvas_container_ref.clone();
                 let pointer_canvas_ref = pointer_canvas_ref.clone();
                 let detector = self.detector.clone();
                 let mut fps = fps.clone();
@@ -62,7 +62,7 @@ impl Component for Canvas {
                 move || {
                     let video = video_ref.current().unwrap();
                     let canvas = canvas_ref.current().unwrap();
-                    let container = container_ref.current().unwrap();
+                    let canvas_container = canvas_container_ref.current().unwrap();
                     let pointer_canvas = pointer_canvas_ref.current().unwrap();
 
                     let (mut raf_loop, canceler) = RafLoop::new();
@@ -74,8 +74,14 @@ impl Component for Canvas {
                                 break;
                             };
 
-                            detector_frame(&video, &canvas, &container, &pointer_canvas, &detector)
-                                .await;
+                            detector_frame(
+                                &video,
+                                &canvas,
+                                &canvas_container,
+                                &pointer_canvas,
+                                &detector,
+                            )
+                            .await;
                             fps.set(|_| Some(fps_counter.tick() as f64));
                         }
                     });

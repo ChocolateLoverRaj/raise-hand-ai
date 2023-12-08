@@ -2,8 +2,30 @@ use aspect_fit::{aspect_fit::aspect_fit, size::Size};
 use js_sys::{Array, Reflect};
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
+use wasm_tensorflow_models_pose_detection::pose_detector::{
+    CommonEstimationConfig, EstimationConfig, PoseDetector,
+};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement};
+
+use crate::draw_poses::draw_poses;
+
+struct Config {
+    pub show_threshold_line: bool,
+    pub show_key_points: bool,
+    pub show_reach_circle: bool,
+    pub show_reach_box: bool,
+    pub show_wrist_point: bool,
+    pub show_pointer_on_screen: bool,
+}
+
+static CONFIG: Config = Config {
+    show_threshold_line: false,
+    show_key_points: true,
+    show_reach_box: false,
+    show_reach_circle: false,
+    show_wrist_point: false,
+    show_pointer_on_screen: true,
+};
 
 pub async fn detector_frame(
     video: &HtmlVideoElement,
@@ -42,7 +64,14 @@ pub async fn detector_frame(
     JsFuture::from(video.play().unwrap()).await.unwrap();
     // let poses = JsFuture::from(estimate_poses()).await.unwrap();
     let poses = detector
-        .estimate_poses(&video.dyn_ref().unwrap(), None)
+        .estimate_poses(
+            &video.dyn_ref().unwrap(),
+            EstimationConfig::BlazePoseOrMoveNet(CommonEstimationConfig {
+                flip_horizontal: Some(true),
+                max_poses: None,
+            }),
+            None,
+        )
         .await
         .unwrap();
 
@@ -58,7 +87,7 @@ pub async fn detector_frame(
     )
     .unwrap();
 
-    ctx.translate((canvas.width() as f64) / scale, 0 as f64)
+    ctx.translate(f64::from(canvas.width()) / scale, 0 as f64)
         .unwrap();
     ctx.scale(-1 as f64, 1 as f64).unwrap();
     ctx.draw_image_with_html_video_element(video, 0 as f64, 0 as f64)
@@ -73,4 +102,8 @@ pub async fn detector_frame(
         &Array::from_iter(vec![&transform_before].iter()),
     )
     .unwrap();
+
+    if CONFIG.show_key_points {
+        draw_poses(&ctx, 0.5, &poses);
+    }
 }
