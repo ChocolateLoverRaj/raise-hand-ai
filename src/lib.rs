@@ -8,6 +8,7 @@ mod draw_poses;
 mod media_device_info;
 mod side_map;
 mod use_future;
+mod use_future2;
 mod use_resize_observer;
 
 import_components! {
