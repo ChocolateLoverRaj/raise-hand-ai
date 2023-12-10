@@ -12,7 +12,7 @@ const drawPoses = (ctx: CanvasRenderingContext2D, minScore: number, poses: Pose[
       ctx.fill()
     })
 
-    util.getAdjacentPairs(SupportedModels.BlazePose).forEach(([a, b]) => {
+    util.getAdjacentPairs(SupportedModels.MoveNet).forEach(([a, b]) => {
       const pointA = pose.keypoints[a]
       const pointB = pose.keypoints[b]
 

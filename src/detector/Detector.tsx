@@ -11,11 +11,9 @@ const Detector = observer<Props>(({ containerRef }) => {
   const [observablePromise] = useState(() => {
     const observablePromise = new ObservablePromise(async () => {
       await setBackend('webgl')
-      const detector = await createDetector(SupportedModels.BlazePose, {
+      const detector = await createDetector(SupportedModels.MoveNet, {
         enableSmoothing: true,
-        modelType: 'lite',
-        runtime: 'mediapipe',
-        solutionPath: './_node_modules/@mediapipe/pose'
+        modelType: 'SinglePose.Lightning'
       })
       return detector
     })

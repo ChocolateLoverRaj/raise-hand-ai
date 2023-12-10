@@ -13,16 +13,16 @@ export interface SideKeypoints {
  */
 const handMap: Map<Side, SideKeypoints> = new Map([
   [Side.LEFT, {
-    wrist: 16,
-    elbow: 14,
-    shoulder: 12,
-    waist: 24
+    wrist: 10,
+    elbow: 8,
+    shoulder: 6,
+    waist: 12
   }],
   [Side.RIGHT, {
-    wrist: 15,
-    elbow: 13,
-    shoulder: 11,
-    waist: 23
+    wrist: 9,
+    elbow: 7,
+    shoulder: 5,
+    waist: 11
   }]
 ])
 
