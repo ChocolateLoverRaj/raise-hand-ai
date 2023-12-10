@@ -6,6 +6,8 @@ use wasm_bindgen::prelude::*;
 mod device_id_context;
 mod draw_poses;
 mod media_device_info;
+mod quadratic_root;
+mod rect_in_sliced_circle;
 mod side_map;
 mod use_future;
 mod use_future2;
