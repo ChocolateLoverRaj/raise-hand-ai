@@ -4,10 +4,7 @@ use wasm_bindgen::JsValue;
 use wasm_react::{hooks::Deps, Component, VNode};
 use wasm_tensorflow_models_pose_detection::{
     create_detector,
-    model::{
-        BlazePoseMediaPipeModelConfig, BlazePoseModelConfig, BlazePoseModelType, ModelWithConfig,
-        Runtime,
-    },
+    model::{ModelWithConfig, MoveNetModelConfig},
 };
 use wasm_tensorflow_tfjs_core::{set_backend, BackendName};
 use web_sys::console::error_1;
@@ -22,14 +19,15 @@ impl Component for Detector {
             move || async move {
                 set_backend(BackendName::Webgl).await?;
                 let detector =
-                    create_detector(ModelWithConfig::BlazePose(Some(BlazePoseModelConfig {
-                        runtime: Runtime::Mediapipe(BlazePoseMediaPipeModelConfig {
-                            solution_path: Some("./_node_modules/@mediapipe/pose".into()),
-                        }),
+                    create_detector(ModelWithConfig::MoveNet(Some(MoveNetModelConfig {
                         enable_smoothing: Some(true),
-                        model_type: Some(BlazePoseModelType::Lite),
-                        enable_segmentation: None,
-                        smooth_segmentation: None,
+                        enable_tracking: Some(true),
+                        min_pose_score: None,
+                        model_type: None,
+                        model_url: None,
+                        multi_pose_max_dimension: None,
+                        tracker_config: None,
+                        tracker_type: None,
                     })))
                     .await?;
                 Ok::<_, JsValue>(detector)

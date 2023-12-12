@@ -258,6 +258,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
 name = "libc"
 version = "0.2.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -444,6 +450,7 @@ dependencies = [
  "console_error_panic_hook",
  "fps_counter",
  "js-sys",
+ "lazy_static",
  "real_float",
  "serde",
  "serde-wasm-bindgen",
@@ -660,9 +667,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-tensorflow-models-pose-detection"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "344070a1d78a04b7321336be902afe0643a47d681c5a87d6375f17d31a16fec8"
+checksum = "0b11460353e9e35612be68274296893f9d55a41d58465a79578ab8da75707350"
 dependencies = [
  "serde",
  "serde-wasm-bindgen",

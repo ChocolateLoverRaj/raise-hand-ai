@@ -4,14 +4,15 @@ use real_float::Real;
 use std::f64::consts::PI;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use wasm_tensorflow_models_pose_detection::pose_detector::{
-    CommonEstimationConfig, EstimationConfig, PoseDetector,
+use wasm_tensorflow_models_pose_detection::{
+    model::Model,
+    pose_detector::{CommonEstimationConfig, EstimationConfig, PoseDetector},
 };
 use web_sys::{
     window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
 };
 
-use crate::{draw_poses::draw_poses, side_map::SIDE_MAP};
+use crate::{draw_poses::draw_poses, flip_horizontal::flip_horizontal, side_maps::SIDE_MAPS};
 
 struct Config {
     pub show_threshold_line: bool,
@@ -66,17 +67,21 @@ pub async fn detector_frame(
     // VERY IMPORTANT: estimating poses before the video plays results in the error
     // RuntimeError: Aborted(native code called abort(). To avoid this error, just await video.play().
     JsFuture::from(video.play().unwrap()).await.unwrap();
-    let poses = detector
-        .estimate_poses(
-            &video.dyn_ref().unwrap(),
-            EstimationConfig::BlazePoseOrMoveNet(CommonEstimationConfig {
-                flip_horizontal: Some(true),
-                max_poses: None,
-            }),
-            None,
-        )
-        .await
-        .unwrap();
+    let poses = {
+        let mut poses = detector
+            .estimate_poses(
+                &video.dyn_ref().unwrap(),
+                EstimationConfig::BlazePoseOrMoveNet(CommonEstimationConfig {
+                    flip_horizontal: Some(false),
+                    max_poses: None,
+                }),
+                None,
+            )
+            .await
+            .unwrap();
+        flip_horizontal(&mut poses, video.video_width() as f64);
+        poses
+    };
 
     let transform_before = Reflect::apply(
         &Reflect::get(&ctx, &"getTransform".into())
@@ -105,11 +110,13 @@ pub async fn detector_frame(
     .unwrap();
 
     if CONFIG.show_key_points {
-        draw_poses(&ctx, 0.5, &poses);
+        draw_poses(&ctx, 0.3, 0.3, &poses);
     }
 
     if let Some(pose) = poses.get(0) {
-        let (pointer_hand, pointer_wrist_y) = SIDE_MAP
+        let (pointer_hand, pointer_wrist_y) = SIDE_MAPS
+            .get(&Model::MoveNet)
+            .unwrap()
             .into_iter()
             .map(|points| (points, pose.keypoints[points.wrist].y))
             .enumerate()
@@ -117,7 +124,9 @@ pub async fn detector_frame(
             .map(|(side, (_side, y))| (side, y))
             .unwrap();
         // log_2(&pointer_hand.into(), &pointer_wrist_y.into());
-        let threshold_y = SIDE_MAP
+        let threshold_y = SIDE_MAPS
+            .get(&Model::MoveNet)
+            .unwrap()
             .iter()
             .map(|points| {
                 let shoulder_y = pose.keypoints[points.shoulder].y;
@@ -153,7 +162,7 @@ pub async fn detector_frame(
             pointer_canvas.height().into(),
         );
         if let Some(pointer_hand) = pointer_hand {
-            let point_indexes = &SIDE_MAP[pointer_hand];
+            let point_indexes = &SIDE_MAPS.get(&Model::MoveNet).unwrap()[pointer_hand];
             let shoulder = &pose.keypoints[point_indexes.shoulder];
             let elbow = &pose.keypoints[point_indexes.elbow];
             let wrist = &pose.keypoints[point_indexes.wrist];
