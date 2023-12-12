@@ -54,4 +54,7 @@ module.exports = {
       }
     ]
   },
+  devServer: {
+    http2: true,
+  },
 };

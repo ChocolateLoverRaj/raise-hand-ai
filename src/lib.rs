@@ -10,6 +10,7 @@ mod media_device_info;
 mod side_maps;
 mod use_future;
 mod use_future2;
+mod use_local_storage_state;
 mod use_resize_observer;
 
 import_components! {

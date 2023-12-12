@@ -3,16 +3,13 @@ use crate::{
     hand_raised::can_camera::camera_success::CameraSuccess,
     use_future::FutureState,
     use_future2::{use_future2, CreateFutureOutput},
+    use_local_storage_state::use_local_storage_state,
 };
 
 use js_sys::{Object, Reflect};
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::{spawn_local, JsFuture};
-use wasm_react::{
-    clones,
-    hooks::{use_state, Deps},
-    Component, ContextProvider, VNode,
-};
+use wasm_react::{clones, hooks::Deps, Component, ContextProvider, VNode};
 use web_sys::{console::log_1, window, MediaStream, MediaStreamConstraints, MediaStreamTrack};
 mod camera_success;
 
@@ -26,10 +23,7 @@ impl CanCamera {
 
 impl Component for CanCamera {
     fn render(&self) -> VNode {
-        let device_id = use_state(|| {
-            let device_id: Option<String> = None;
-            device_id
-        });
+        let device_id = use_local_storage_state("", || None::<String>);
         let device_id_clone = device_id.clone();
         let video_promise = use_future2(
             move || {
