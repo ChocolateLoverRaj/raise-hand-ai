@@ -1,5 +1,7 @@
 use wasm_react::{Component, VNode};
+mod camera_context;
 mod can_camera;
+mod use_camera;
 
 pub struct HandRaised;
 
@@ -20,7 +22,7 @@ fn can_access_camera() -> bool {
 impl Component for HandRaised {
     fn render(&self) -> VNode {
         match can_access_camera() {
-            true => CanCamera::new().build(),
+            true => CanCamera {}.build(),
             false => VNode::from("Your browser cannot give this page camera access"),
         }
     }

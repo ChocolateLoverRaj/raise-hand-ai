@@ -36,7 +36,7 @@ serde-wasm-bindgen = "0.6.1"
 serde = "1.0.193"
 aspect-fit = "0.1.0"
 wasm-repeated-animation-frame = "0.1.1"
-wasm-tensorflow-models-pose-detection = "0.4.0"
+wasm-tensorflow-models-pose-detection = "0.5.0"
 wasm-tensorflow-tfjs-core = "0.1.1"
 wasm-react = "0.6.0"
 coloriz = "0.2.0"
@@ -56,6 +56,7 @@ features = [
   "MediaDevices",
   "Window",
   "MediaStreamConstraints",
+  "MediaTrackConstraints",
   "EventTarget",
   "HtmlVideoElement",
   "HtmlCanvasElement",

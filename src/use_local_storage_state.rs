@@ -4,6 +4,8 @@ use serde::{de::DeserializeOwned, Serialize};
 use wasm_react::hooks::{use_state, State};
 use web_sys::window;
 
+use crate::get_set::GetSet;
+
 #[derive(Debug, Clone)]
 pub struct LocalStorageState<'a, T>
 where
@@ -13,11 +15,15 @@ where
     state: State<T>,
 }
 
-impl<'a, T: 'static> LocalStorageState<'a, T>
+impl<'a, T: 'static> GetSet<T> for LocalStorageState<'a, T>
 where
     T: Serialize,
 {
-    pub fn set(&mut self, mutator: impl FnOnce(T) -> T) {
+    fn get(&self) -> Ref<'_, T> {
+        self.state.value()
+    }
+
+    fn set(&mut self, mutator: impl FnOnce(T) -> T) {
         self.state.set(mutator);
         window()
             .unwrap()
@@ -31,10 +37,6 @@ where
                     .as_str(),
             )
             .unwrap();
-    }
-
-    pub fn value(&self) -> Ref<'_, T> {
-        self.state.value()
     }
 }
 

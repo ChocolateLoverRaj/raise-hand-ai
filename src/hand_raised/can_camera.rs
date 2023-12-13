@@ -1,101 +1,37 @@
 use crate::{
-    device_id_context::{VideoPromiseAndId, DEVICE_ID_CONTEXT},
     hand_raised::can_camera::camera_success::CameraSuccess,
     use_future::FutureState,
-    use_future2::{use_future2, CreateFutureOutput},
-    use_local_storage_state::use_local_storage_state,
+    use_local_storage_state::{use_local_storage_state, LocalStorageState},
 };
+use wasm_react::{create_context, Component, Context, ContextProvider, VNode};
 
-use js_sys::{Object, Reflect};
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::{spawn_local, JsFuture};
-use wasm_react::{clones, hooks::Deps, Component, ContextProvider, VNode};
-use web_sys::{console::log_1, window, MediaStream, MediaStreamConstraints, MediaStreamTrack};
+use self::use_detector::{use_detector, DETECTOR_CONTEXT};
+
+use super::{camera_context::CameraContext, use_camera::use_camera};
 mod camera_success;
+mod use_detector;
 
 pub struct CanCamera {}
 
-impl CanCamera {
-    pub fn new() -> CanCamera {
-        CanCamera {}
-    }
+thread_local! {
+    pub static CAMERA_CONTEXT: Context<Option<CameraContext<LocalStorageState<'static, Option<String>>>>> = create_context(None.into());
 }
 
 impl Component for CanCamera {
     fn render(&self) -> VNode {
-        let device_id = use_local_storage_state("", || None::<String>);
-        let device_id_clone = device_id.clone();
-        let video_promise = use_future2(
-            move || {
-                let (s, r) = async_channel::unbounded::<MediaStream>();
-                CreateFutureOutput {
-                    future: async move {
-                        let video_object = Object::new();
-                        match device_id_clone.value().clone() {
-                            Some(device_id) => {
-                                log_1(&device_id[..].into());
-                                Reflect::set(&video_object, &"deviceId".into(), &device_id.into())
-                                    .unwrap();
-                            }
-                            None => {
-                                Reflect::set(&video_object, &"facingMode".into(), &"user".into())
-                                    .unwrap();
-                            }
-                        }
-                        let js_promise = window()
-                            .unwrap()
-                            .navigator()
-                            .media_devices()
-                            .unwrap()
-                            .get_user_media_with_constraints(
-                                &MediaStreamConstraints::new().video(&video_object),
-                            )
-                            .unwrap();
-                        let result: Result<
-                            wasm_bindgen::prelude::JsValue,
-                            wasm_bindgen::prelude::JsValue,
-                        > = JsFuture::from(js_promise).await;
-                        match result {
-                            Ok(media_stream) => {
-                                let media_stream: MediaStream = media_stream.dyn_into().unwrap();
-                                s.send(media_stream.to_owned()).await.unwrap();
-                                Ok(media_stream)
-                            }
-                            Err(e) => Err(e),
-                        }
-                    },
-                    destructor: move || {
-                        spawn_local(async move {
-                            let media_stream = r.recv().await.unwrap();
-                            for track in media_stream.get_video_tracks().to_vec() {
-                                let track: MediaStreamTrack = track.dyn_into().unwrap();
-                                track.stop();
-                            }
-                        })
-                    },
-                }
-            },
-            Deps::some(device_id.value().clone()),
-        );
-        let v_node = match video_promise.value().clone() {
+        let detector = use_detector();
+        let camera_context = use_camera(use_local_storage_state("device_id", || None));
+        let v_node = match &camera_context.video_promise {
             FutureState::NotStarted => "Will get camera".into(),
             FutureState::Pending => "Getting camera".into(),
-            FutureState::Done(result) => {
-                clones!(mut device_id);
-                ContextProvider::from(&DEVICE_ID_CONTEXT)
-                    .value(Some(
-                        Some(VideoPromiseAndId {
-                            video_promise: match result {
-                                Ok(device_id) => Some(device_id.to_owned()),
-                                Err(_e) => None,
-                            },
-                            device_id,
-                        })
-                        .into(),
-                    ))
-                    .build(CameraSuccess::new().build())
-            }
+            FutureState::Done(_result) => CameraSuccess::new().build(),
         };
-        v_node
+        ContextProvider::from(&DETECTOR_CONTEXT)
+            .value(Some(detector.into()))
+            .build(
+                ContextProvider::from(&CAMERA_CONTEXT)
+                    .value(Some(Some(camera_context).into()))
+                    .build(v_node),
+            )
     }
 }

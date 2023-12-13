@@ -14,7 +14,7 @@ use web_sys::{
     console::log_1, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack,
 };
 
-use crate::{device_id_context::DEVICE_ID_CONTEXT, use_future::FutureState};
+use crate::{hand_raised::can_camera::CAMERA_CONTEXT, use_future::FutureState};
 
 use self::{
     detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
@@ -43,10 +43,17 @@ impl Component for Canvas {
             video_ref: video_ref.clone(),
         });
 
-        let video_context = use_context(&DEVICE_ID_CONTEXT);
+        let camera_context = use_context(&CAMERA_CONTEXT);
 
-        let media_stream_promise = &video_context.as_ref().as_ref().unwrap().video_promise;
-        let media_stream = media_stream_promise.as_ref().unwrap();
+        let media_stream = camera_context
+            .as_ref()
+            .as_ref()
+            .unwrap()
+            .video_promise
+            .get_result()
+            .unwrap()
+            .as_ref()
+            .unwrap();
 
         let fps = use_state(|| None::<f64>);
 

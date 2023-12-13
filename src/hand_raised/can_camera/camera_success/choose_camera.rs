@@ -1,5 +1,6 @@
 use crate::{
-    device_id_context::DEVICE_ID_CONTEXT,
+    get_set::GetSet,
+    hand_raised::can_camera::CAMERA_CONTEXT,
     media_device_info::MediaDeviceInfo,
     use_future::{use_future, FutureState},
 };
@@ -8,7 +9,7 @@ use std::ops::Deref;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use wasm_react::{
-    clones, h,
+    h,
     hooks::{use_context, Deps},
     Callback, Component, VNode,
 };
@@ -48,9 +49,13 @@ impl Component for ChooseCamera {
             },
             Deps::none(),
         );
-        let context = use_context(&DEVICE_ID_CONTEXT);
+        let context = use_context(&CAMERA_CONTEXT);
         let media_stream = match context.as_ref() {
-            Some(video_promise_and_id) => video_promise_and_id.video_promise.clone(),
+            Some(context) => context
+                .video_promise
+                .get_result()
+                .map(|v| v.as_ref().ok())
+                .flatten(),
             None => None,
         };
 
@@ -78,15 +83,13 @@ impl Component for ChooseCamera {
                     })
                     .on_change(&Callback::<Event>::new({
                         move |event| {
-                            if let Some(device_id) = context.as_ref() {
-                                let device_id = &device_id.device_id;
-                                clones!(mut device_id);
-                                device_id.set(|_| {
-                                    let target = event.target().unwrap();
-                                    let value = Reflect::get(&target, &"value".into()).unwrap();
-                                    value.as_string()
-                                });
-                            };
+                            let mut device_id =
+                                context.as_ref().as_ref().unwrap().device_id.clone();
+                            device_id.set(|_| {
+                                let target = event.target().unwrap();
+                                let value = Reflect::get(&target, &"value".into()).unwrap();
+                                value.as_string()
+                            });
                         }
                     }))
                     .build(

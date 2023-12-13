@@ -9,6 +9,15 @@ pub enum FutureState<T> {
     Done(T),
 }
 
+impl<T> FutureState<T> {
+    pub fn get_result(&self) -> Option<&T> {
+        match self {
+            FutureState::Done(v) => Some(v),
+            _ => None,
+        }
+    }
+}
+
 pub fn use_future<T, F, Fut, D>(create_future: F, deps: Deps<D>) -> State<FutureState<T>>
 where
     T: 'static,
