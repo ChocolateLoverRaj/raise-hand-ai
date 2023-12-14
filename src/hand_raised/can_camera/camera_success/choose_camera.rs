@@ -85,11 +85,11 @@ impl Component for ChooseCamera {
                         move |event| {
                             let mut device_id =
                                 context.as_ref().as_ref().unwrap().device_id.clone();
-                            device_id.set(|_| {
+                            device_id.set(Box::new(move |_| {
                                 let target = event.target().unwrap();
                                 let value = Reflect::get(&target, &"value".into()).unwrap();
                                 value.as_string()
-                            });
+                            }));
                         }
                     }))
                     .build(

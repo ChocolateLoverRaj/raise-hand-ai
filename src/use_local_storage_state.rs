@@ -23,7 +23,7 @@ where
         self.state.value()
     }
 
-    fn set(&mut self, mutator: impl FnOnce(T) -> T) {
+    fn set(&mut self, mutator: Box<dyn FnOnce(T) -> T>) {
         self.state.set(mutator);
         window()
             .unwrap()

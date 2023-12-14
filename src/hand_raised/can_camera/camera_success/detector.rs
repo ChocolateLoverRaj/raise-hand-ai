@@ -9,11 +9,12 @@ pub struct Detector;
 
 impl Component for Detector {
     fn render(&self) -> VNode {
-        let detector = use_context(&DETECTOR_CONTEXT).as_ref().clone().expect(
+        let context = &use_context(&DETECTOR_CONTEXT);
+        let detector = context.as_ref().as_ref().expect(
             "No detector context!. Place this component inside a detector context provider.",
         );
 
-        let v_node = match detector.value().clone() {
+        let v_node = match detector.get().clone() {
             FutureState::NotStarted => "Will set up detector".into(),
             FutureState::Pending => "Setting up detector".into(),
             FutureState::Done(result) => match result {

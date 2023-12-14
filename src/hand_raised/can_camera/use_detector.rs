@@ -1,9 +1,5 @@
 use wasm_bindgen::JsValue;
-use wasm_react::{
-    create_context,
-    hooks::{Deps, State},
-    Context,
-};
+use wasm_react::{create_context, hooks::Deps, Context};
 use wasm_tensorflow_models_pose_detection::{
     create_detector,
     model::{ModelWithConfig, MoveNetModelConfig},
@@ -12,18 +8,19 @@ use wasm_tensorflow_models_pose_detection::{
 use wasm_tensorflow_tfjs_core::{set_backend, BackendName};
 
 use crate::{
+    get_set::GetSet,
     use_future::FutureState,
     use_future2::{use_future2, CreateFutureOutput},
 };
 
-pub type DetectorContext = Option<State<FutureState<Result<PoseDetector, JsValue>>>>;
+pub type DetectorContext = Option<Box<dyn GetSet<FutureState<Result<PoseDetector, JsValue>>>>>;
 
 thread_local! {
     pub static DETECTOR_CONTEXT: Context<DetectorContext> = create_context(None.into());
 }
 
 pub fn use_detector() -> DetectorContext {
-    Some(use_future2(
+    Some(Box::new(use_future2(
         move || CreateFutureOutput {
             future: async {
                 set_backend(BackendName::Webgl).await?;
@@ -44,5 +41,5 @@ pub fn use_detector() -> DetectorContext {
             destructor: (),
         },
         Deps::none(),
-    ))
+    )))
 }
