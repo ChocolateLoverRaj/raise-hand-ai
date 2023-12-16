@@ -1,20 +1,26 @@
+use std::rc::Rc;
+
 use fps_counter::FPSCounter;
 use js_sys::Reflect;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_react::{
     create_element, h,
-    hooks::{use_context, use_effect, use_js_ref, use_state, Deps},
+    hooks::{use_effect, use_js_ref, use_state, Deps},
     props::{Props, Style},
     Component, VNode,
 };
 use wasm_repeated_animation_frame::RafLoop;
-use wasm_tensorflow_models_pose_detection::pose_detector::PoseDetector;
+use wasm_tensorflow_models_pose_detection::model::Model;
 use web_sys::{
     console::log_1, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement, MediaStreamTrack,
 };
 
-use crate::{hand_raised::can_camera::CAMERA_CONTEXT, use_future::FutureState};
+use crate::{
+    get_set::GetSet,
+    hand_raised::{camera_data::CameraData, can_camera::use_detector::DetectorData},
+    use_future::FutureState,
+};
 
 use self::{
     detector_frame::detector_frame, resize_canvas_input::ResizeCanvasInput,
@@ -25,11 +31,14 @@ mod resize_canvas;
 mod resize_canvas_input;
 mod use_play_promise_and_auto_resize_canvas;
 
-pub struct Canvas {
-    pub detector: PoseDetector,
+pub struct Canvas<G0: GetSet<Option<String>>, G1: GetSet<Model>> {
+    pub camera_data: Rc<CameraData<G0>>,
+    pub detector: Rc<DetectorData<G1>>,
 }
 
-impl Component for Canvas {
+impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Component
+    for Canvas<G0, G1>
+{
     fn render(&self) -> VNode {
         let container_ref = use_js_ref::<HtmlDivElement>(None);
         let video_ref = use_js_ref(None::<HtmlVideoElement>);
@@ -37,19 +46,29 @@ impl Component for Canvas {
         let canvas_container_ref = use_js_ref(None::<HtmlDivElement>);
         let pointer_canvas_ref = use_js_ref(None::<HtmlCanvasElement>);
 
-        let play_future_state = use_play_promise_and_auto_resize_canvas(ResizeCanvasInput {
-            canvas_ref: canvas_ref.clone(),
-            container_ref: canvas_container_ref.clone(),
-            video_ref: video_ref.clone(),
-        });
+        let play_future_state = use_play_promise_and_auto_resize_canvas(
+            ResizeCanvasInput {
+                canvas_ref: canvas_ref.clone(),
+                container_ref: canvas_container_ref.clone(),
+                video_ref: video_ref.clone(),
+            },
+            self.camera_data
+                .clone()
+                .video_promise
+                .as_ref()
+                .get_result()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .clone()
+                .dyn_into()
+                .unwrap(),
+        );
 
-        let camera_context = use_context(&CAMERA_CONTEXT);
-
-        let media_stream = camera_context
-            .as_ref()
-            .as_ref()
-            .unwrap()
+        let media_stream = self
+            .camera_data
             .video_promise
+            .as_ref()
             .get_result()
             .unwrap()
             .as_ref()
@@ -63,7 +82,16 @@ impl Component for Canvas {
                 let canvas_ref = canvas_ref.clone();
                 let canvas_container_ref = canvas_container_ref.clone();
                 let pointer_canvas_ref = pointer_canvas_ref.clone();
-                let detector = self.detector.clone();
+                let model_state = self.detector.model.clone();
+                let detector = self
+                    .detector
+                    .create_detector
+                    .as_ref()
+                    .get_result()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .clone();
                 let mut fps = fps.clone();
 
                 move || {
@@ -87,6 +115,7 @@ impl Component for Canvas {
                                 &canvas_container,
                                 &pointer_canvas,
                                 &detector,
+                                &model_state.get().clone(),
                             )
                             .await;
                             fps.set(|_| Some(fps_counter.tick() as f64));

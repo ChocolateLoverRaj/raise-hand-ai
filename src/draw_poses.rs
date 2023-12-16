@@ -16,6 +16,7 @@ pub fn draw_poses(
     min_pose_score: f64,
     min_point_score: f64,
     poses: &Vec<Pose>,
+    model: &Model,
 ) {
     let worst_score_color = RGB::new(255, 0, 0);
     let best_score_color = RGB::new(0, 255, 0);
@@ -35,7 +36,7 @@ pub fn draw_poses(
                 }
             }
 
-            for (a, b) in get_adjacent_pairs(Model::MoveNet) {
+            for (a, b) in get_adjacent_pairs(model.clone()) {
                 let point_a = &pose.keypoints[a as usize];
                 let point_b = &pose.keypoints[b as usize];
                 if point_a.score.map_or(true, |score| score > min_point_score)

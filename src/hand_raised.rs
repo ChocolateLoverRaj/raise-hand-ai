@@ -1,5 +1,5 @@
 use wasm_react::{Component, VNode};
-mod camera_context;
+mod camera_data;
 mod can_camera;
 mod use_camera;
 

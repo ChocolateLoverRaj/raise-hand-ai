@@ -1,29 +1,21 @@
 use crate::{
     get_set::GetSet,
-    hand_raised::can_camera::CAMERA_CONTEXT,
+    hand_raised::camera_data::CameraData,
     media_device_info::MediaDeviceInfo,
     use_future::{use_future, FutureState},
 };
 use js_sys::{Array, Reflect};
-use std::ops::Deref;
+use std::{ops::Deref, rc::Rc};
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use wasm_react::{
-    h,
-    hooks::{use_context, Deps},
-    Callback, Component, VNode,
-};
+use wasm_react::{h, hooks::Deps, Callback, Component, VNode};
 use web_sys::{window, Event, MediaStreamTrack};
 
-pub struct ChooseCamera;
-
-impl ChooseCamera {
-    pub fn new() -> ChooseCamera {
-        ChooseCamera {}
-    }
+pub struct ChooseCamera<G: GetSet<Option<String>>> {
+    pub camera_data: Rc<CameraData<G>>,
 }
 
-impl Component for ChooseCamera {
+impl<G: GetSet<Option<String>> + 'static> Component for ChooseCamera<G> {
     fn render(&self) -> wasm_react::VNode {
         let devices_promise = use_future(
             move || async move {
@@ -49,15 +41,14 @@ impl Component for ChooseCamera {
             },
             Deps::none(),
         );
-        let context = use_context(&CAMERA_CONTEXT);
-        let media_stream = match context.as_ref() {
-            Some(context) => context
-                .video_promise
-                .get_result()
-                .map(|v| v.as_ref().ok())
-                .flatten(),
-            None => None,
-        };
+        let media_stream = self
+            .camera_data
+            .video_promise
+            .as_ref()
+            .get_result()
+            .map(|v| v.as_ref().ok())
+            .flatten()
+            .unwrap();
 
         let v_node = match devices_promise.value().deref() {
             FutureState::NotStarted => "Will get list of cameras".into(),
@@ -68,12 +59,8 @@ impl Component for ChooseCamera {
             FutureState::Done(result) => match result {
                 Ok(devices) => h!(select)
                     .value({
-                        let video_track: MediaStreamTrack = media_stream
-                            .unwrap()
-                            .get_video_tracks()
-                            .get(0)
-                            .dyn_into()
-                            .unwrap();
+                        let video_track: MediaStreamTrack =
+                            media_stream.get_video_tracks().get(0).dyn_into().unwrap();
                         let settings = video_track.get_settings();
                         let device_id = Reflect::get(&settings, &"deviceId".into())
                             .unwrap()
@@ -81,17 +68,18 @@ impl Component for ChooseCamera {
                             .unwrap();
                         device_id
                     })
-                    .on_change(&Callback::<Event>::new({
-                        move |event| {
-                            let mut device_id =
-                                context.as_ref().as_ref().unwrap().device_id.clone();
-                            device_id.set(Box::new(move |_| {
-                                let target = event.target().unwrap();
-                                let value = Reflect::get(&target, &"value".into()).unwrap();
-                                value.as_string()
-                            }));
-                        }
-                    }))
+                    .on_change({
+                        let mut device_id = self.camera_data.device_id.clone();
+                        &Callback::<Event>::new({
+                            move |event| {
+                                device_id.set(Box::new(move |_| {
+                                    let target = event.target().unwrap();
+                                    let value = Reflect::get(&target, &"value".into()).unwrap();
+                                    value.as_string()
+                                }));
+                            }
+                        })
+                    })
                     .build(
                         devices
                             .to_owned()

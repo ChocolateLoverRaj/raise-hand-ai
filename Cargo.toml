@@ -36,7 +36,7 @@ serde-wasm-bindgen = "0.6.1"
 serde = "1.0.193"
 aspect-fit = "0.1.0"
 wasm-repeated-animation-frame = "0.1.1"
-wasm-tensorflow-models-pose-detection = "0.5.0"
+wasm-tensorflow-models-pose-detection = "0.6.0"
 wasm-tensorflow-tfjs-core = "0.1.1"
 wasm-react = "0.6.0"
 coloriz = "0.2.0"
@@ -45,6 +45,9 @@ real_float = "0.3.0"
 async-channel = "2.1.1"
 lazy_static = "1.4.0"
 serde_json = "1.0.108"
+strum = "0.25.0"
+strum_macros = "0.25.3"
+enum-iterator = "1.4.1"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
@@ -61,6 +64,7 @@ features = [
   "HtmlVideoElement",
   "HtmlCanvasElement",
   "HtmlDivElement",
+  "HtmlSelectElement",
   "Element",
   "HtmlElement",
   "MediaStream",

@@ -106,6 +106,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum-iterator"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7add3873b5dd076766ee79c8e406ad1a472c385476b9e38849f8eec24f1be689"
+dependencies = [
+ "enum-iterator-derive",
+]
+
+[[package]]
+name = "enum-iterator-derive"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eecf8589574ce9b895052fa12d69af7a233f99e6107f5cb8dd1044f2a17bfdcb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "event-listener"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -454,6 +474,7 @@ dependencies = [
  "average",
  "coloriz",
  "console_error_panic_hook",
+ "enum-iterator",
  "fps_counter",
  "js-sys",
  "lazy_static",
@@ -461,6 +482,8 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
+ "strum",
+ "strum_macros",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
@@ -540,6 +563,12 @@ checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "strum"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
 
 [[package]]
 name = "strum_macros"
@@ -691,12 +720,14 @@ dependencies = [
 
 [[package]]
 name = "wasm-tensorflow-models-pose-detection"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbc7985d93591d41f0a8175c19cd7fde0ecc68dd0ecba29d17f3549fe6eb9083"
+checksum = "944e87cc466079951accc2e4c0b367e3b794935a1642b92791356f101891b324"
 dependencies = [
+ "enum-iterator",
  "serde",
  "serde-wasm-bindgen",
+ "strum",
  "strum_macros",
  "wasm-bindgen",
  "wasm-bindgen-futures",

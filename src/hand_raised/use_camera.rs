@@ -10,9 +10,9 @@ use crate::{
     use_future2::{use_future2, CreateFutureOutput},
 };
 
-use super::camera_context::CameraContext;
+use super::camera_data::CameraData;
 
-pub fn use_camera<G>(device_id: G) -> CameraContext<G>
+pub fn use_camera<G>(device_id: G) -> CameraData<G>
 where
     G: GetSet<Option<String>> + Clone + 'static,
 {
@@ -74,7 +74,7 @@ where
     );
 
     let video_promise_value = video_promise.value();
-    CameraContext {
+    CameraData {
         device_id,
         video_promise: video_promise_value.clone(),
     }

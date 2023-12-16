@@ -10,10 +10,18 @@ pub enum FutureState<T> {
 }
 
 impl<T> FutureState<T> {
-    pub fn get_result(&self) -> Option<&T> {
+    pub fn get_result(self) -> Option<T> {
         match self {
             FutureState::Done(v) => Some(v),
             _ => None,
+        }
+    }
+
+    pub fn as_ref(&self) -> FutureState<&T> {
+        match self {
+            FutureState::NotStarted => FutureState::NotStarted,
+            FutureState::Pending => FutureState::Pending,
+            FutureState::Done(v) => FutureState::Done(&v),
         }
     }
 }
