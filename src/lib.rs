@@ -7,6 +7,8 @@ mod draw_poses;
 mod flip_horizontal;
 mod get_set;
 mod media_device_info;
+mod quadratic_root;
+mod rect_in_sliced_circle;
 mod side_maps;
 mod use_future;
 mod use_future2;

@@ -12,7 +12,12 @@ use web_sys::{
     window, CanvasRenderingContext2d, HtmlCanvasElement, HtmlDivElement, HtmlVideoElement,
 };
 
-use crate::{draw_poses::draw_poses, flip_horizontal::flip_horizontal, side_maps::SIDE_MAPS};
+use crate::{
+    draw_poses::draw_poses,
+    flip_horizontal::flip_horizontal,
+    rect_in_sliced_circle::{rect_in_sliced_circle, Ratio, Slice},
+    side_maps::SIDE_MAPS,
+};
 
 struct Config {
     pub show_threshold_line: bool,
@@ -177,9 +182,26 @@ pub async fn detector_frame(
             .powf(0.5)
                 + (((wrist.x - elbow.x) as f64).powi(2) + ((wrist.y - elbow.y) as f64).powi(2))
                     .powf(0.5);
-            let diagonal =
-                ((aspect_ratio.width.pow(2) + aspect_ratio.height.pow(2)) as f64).powf(0.5);
-            let diagonal_scale = radius / diagonal;
+            let rect = rect_in_sliced_circle(
+                Ratio {
+                    width: aspect_ratio.width as f64,
+                    height: aspect_ratio.height as f64,
+                },
+                Slice {
+                    position: 0.0,
+                    direction: match pointer_hand {
+                        0 => 1 as f64,
+                        1 => -1 as f64,
+                        _ => panic!(),
+                    },
+                },
+                Slice {
+                    position: -(threshold_y - shoulder.y),
+                    direction: 1 as f64,
+                },
+                (0.0, 0.0),
+                radius,
+            );
 
             if CONFIG.show_reach_circle {
                 ctx.begin_path();
@@ -197,10 +219,10 @@ pub async fn detector_frame(
                 ctx.fill();
             }
 
-            let left_x = shoulder.x - (aspect_ratio.width as f64) * diagonal_scale;
-            let right_x = shoulder.x + (aspect_ratio.width as f64) * diagonal_scale;
-            let top_y = shoulder.y - (aspect_ratio.height as f64) * diagonal_scale;
-            let bottom_y = shoulder.y + (aspect_ratio.height as f64) * diagonal_scale;
+            let left_x = rect.bottom_left_corner.0 + shoulder.x;
+            let right_x = left_x + (aspect_ratio.width as f64) * rect.scale;
+            let bottom_y = -rect.bottom_left_corner.1 + shoulder.y;
+            let top_y = bottom_y - (aspect_ratio.height as f64) * rect.scale;
 
             let (normalized_x, normalized_y) = {
                 let mut x = wrist.x;
@@ -212,8 +234,8 @@ pub async fn detector_frame(
                 (x, y)
             };
 
-            let box_width = (aspect_ratio.width as f64) * diagonal_scale * (2 as f64);
-            let box_height = (aspect_ratio.height as f64) * diagonal_scale * (2 as f64);
+            let box_width = (aspect_ratio.width as f64) * rect.scale;
+            let box_height = (aspect_ratio.height as f64) * rect.scale;
 
             if CONFIG.show_reach_box {
                 ctx.begin_path();
