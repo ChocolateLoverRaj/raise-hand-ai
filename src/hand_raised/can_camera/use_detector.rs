@@ -21,7 +21,7 @@ pub struct DetectorData<M: GetSet<Model>> {
     pub model: M,
 }
 
-pub static DEFAULT_MODEL: &Model = &Model::MoveNet;
+pub static DEFAULT_MODEL: &Model = &Model::BlazePose;
 
 pub fn use_detector<M: GetSet<Model> + Clone + 'static>(model: M) -> DetectorData<M> {
     let future = use_future2(
