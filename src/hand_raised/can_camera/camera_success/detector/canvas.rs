@@ -109,13 +109,14 @@ impl<G0: GetSet<Option<String>> + 'static, G1: GetSet<Model> + 'static> Componen
                                 break;
                             };
 
+                            let model = model_state.get().clone();
                             detector_frame(
                                 &video,
                                 &canvas,
                                 &canvas_container,
                                 &pointer_canvas,
                                 &detector,
-                                &model_state.get().clone(),
+                                &model,
                             )
                             .await;
                             fps.set(|_| Some(fps_counter.tick() as f64));
